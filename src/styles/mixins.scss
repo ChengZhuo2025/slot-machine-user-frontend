@@ -1,0 +1,313 @@
+// 导入变量
+@import './variables.scss';
+
+// 清除浮动
+@mixin clearfix() {
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}
+
+// 文字省略号
+@mixin ellipsis($lines: 1) {
+  @if $lines == 1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: $lines;
+    overflow: hidden;
+    word-break: break-all;
+  }
+}
+
+// 水平垂直居中
+@mixin center($type: both) {
+  position: absolute;
+  @if $type == both {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  } @else if $type == horizontal {
+    left: 50%;
+    transform: translateX(-50%);
+  } @else if $type == vertical {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
+
+// Flex布局
+@mixin flex($direction: row, $justify: flex-start, $align: stretch, $wrap: nowrap) {
+  display: flex;
+  flex-direction: $direction;
+  justify-content: $justify;
+  align-items: $align;
+  flex-wrap: $wrap;
+}
+
+// 快速Flex居中
+@mixin flex-center() {
+  @include flex(row, center, center);
+}
+
+// Flex均匀分布
+@mixin flex-between() {
+  @include flex(row, space-between, center);
+}
+
+// Flex两端对齐
+@mixin flex-around() {
+  @include flex(row, space-around, center);
+}
+
+// 圆形
+@mixin circle($size) {
+  width: $size;
+  height: $size;
+  border-radius: 50%;
+}
+
+// 正方形
+@mixin square($size) {
+  width: $size;
+  height: $size;
+}
+
+// 尺寸
+@mixin size($width, $height: $width) {
+  width: $width;
+  height: $height;
+}
+
+// 绝对定位
+@mixin absolute($top: auto, $right: auto, $bottom: auto, $left: auto) {
+  position: absolute;
+  top: $top;
+  right: $right;
+  bottom: $bottom;
+  left: $left;
+}
+
+// 固定定位
+@mixin fixed($top: auto, $right: auto, $bottom: auto, $left: auto) {
+  position: fixed;
+  top: $top;
+  right: $right;
+  bottom: $bottom;
+  left: $left;
+}
+
+// 背景图片
+@mixin bg-image($url, $size: cover, $position: center, $repeat: no-repeat) {
+  background-image: url($url);
+  background-size: $size;
+  background-position: $position;
+  background-repeat: $repeat;
+}
+
+// 渐变背景
+@mixin gradient($start-color, $end-color, $direction: to right) {
+  background: linear-gradient($direction, $start-color, $end-color);
+}
+
+// 过渡动画
+@mixin transition($property: all, $duration: $transition-base, $timing: $ease-in-out) {
+  transition: $property $duration $timing;
+}
+
+// 阴影
+@mixin shadow($type: base) {
+  @if $type == sm {
+    box-shadow: $shadow-sm;
+  } @else if $type == base {
+    box-shadow: $shadow-base;
+  } @else if $type == lg {
+    box-shadow: $shadow-lg;
+  } @else if $type == xl {
+    box-shadow: $shadow-xl;
+  }
+}
+
+// 边框
+@mixin border($width: 1rpx, $style: solid, $color: $border-color) {
+  border: $width $style $color;
+}
+
+// 单边边框
+@mixin border-top($width: 1rpx, $style: solid, $color: $border-color) {
+  border-top: $width $style $color;
+}
+
+@mixin border-right($width: 1rpx, $style: solid, $color: $border-color) {
+  border-right: $width $style $color;
+}
+
+@mixin border-bottom($width: 1rpx, $style: solid, $color: $border-color) {
+  border-bottom: $width $style $color;
+}
+
+@mixin border-left($width: 1rpx, $style: solid, $color: $border-color) {
+  border-left: $width $style $color;
+}
+
+// 响应式断点
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == sm {
+    @media (min-width: $breakpoint-sm) {
+      @content;
+    }
+  } @else if $breakpoint == md {
+    @media (min-width: $breakpoint-md) {
+      @content;
+    }
+  } @else if $breakpoint == lg {
+    @media (min-width: $breakpoint-lg) {
+      @content;
+    }
+  } @else if $breakpoint == xl {
+    @media (min-width: $breakpoint-xl) {
+      @content;
+    }
+  }
+}
+
+// 按钮样式
+@mixin button-base() {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-base;
+  border: none;
+  border-radius: $border-radius-base;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  text-align: center;
+  cursor: pointer;
+  @include transition();
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// 主按钮
+@mixin button-primary() {
+  @include button-base();
+  background-color: $primary-color;
+  color: white;
+  
+  &:hover {
+    background-color: $primary-dark;
+  }
+  
+  &:disabled {
+    background-color: $text-tertiary;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+// 次要按钮
+@mixin button-secondary() {
+  @include button-base();
+  background-color: transparent;
+  color: $primary-color;
+  border: 1rpx solid $primary-color;
+  
+  &:hover {
+    background-color: $primary-color;
+    color: white;
+  }
+  
+  &:disabled {
+    color: $text-tertiary;
+    border-color: $text-tertiary;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+// 卡片样式
+@mixin card() {
+  background: $background-primary;
+  border-radius: $border-radius-xl;
+  box-shadow: 0 8rpx 32rpx rgba(115, 0, 200, 0.15);
+  overflow: hidden;
+}
+
+// 输入框样式
+@mixin input-base() {
+  width: 100%;
+  padding: $spacing-sm $spacing-base;
+  border: 1rpx solid $border-color;
+  border-radius: $border-radius-base;
+  font-size: $font-size-base;
+  color: $text-primary;
+  background-color: $background-primary;
+  @include transition(border-color);
+
+  &:focus {
+    border-color: $primary-color;
+    outline: none;
+  }
+
+  &::placeholder {
+    color: $text-placeholder;
+  }
+
+  &:disabled {
+    background-color: $background-tertiary;
+    color: $text-tertiary;
+    cursor: not-allowed;
+  }
+}
+
+// 安全区域 - 底部内边距(适配iPhone X等刘海屏)
+@mixin safe-area-inset-bottom($extra: 0rpx) {
+  padding-bottom: calc(constant(safe-area-inset-bottom) + #{$extra});
+  padding-bottom: calc(env(safe-area-inset-bottom) + #{$extra});
+}
+
+// 安全区域 - 顶部内边距
+@mixin safe-area-inset-top($extra: 0rpx) {
+  padding-top: calc(constant(safe-area-inset-top) + #{$extra});
+  padding-top: calc(env(safe-area-inset-top) + #{$extra});
+}
+
+// 安全区域 - 左侧内边距
+@mixin safe-area-inset-left($extra: 0rpx) {
+  padding-left: calc(constant(safe-area-inset-left) + #{$extra});
+  padding-left: calc(env(safe-area-inset-left) + #{$extra});
+}
+
+// 安全区域 - 右侧内边距
+@mixin safe-area-inset-right($extra: 0rpx) {
+  padding-right: calc(constant(safe-area-inset-right) + #{$extra});
+  padding-right: calc(env(safe-area-inset-right) + #{$extra});
+}
+
+// Flex起始对齐
+@mixin flex-start() {
+  display: flex;
+  justify-content: flex-start;
+}
+
+// Flex末尾对齐
+@mixin flex-end() {
+  display: flex;
+  justify-content: flex-end;
+}
+
+// 多行文本省略(line-clamp别名,与ellipsis统一)
+@mixin line-clamp($lines: 2) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: $lines;
+  overflow: hidden;
+  word-break: break-all;
+}

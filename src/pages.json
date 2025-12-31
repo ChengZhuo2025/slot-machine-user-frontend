@@ -1,0 +1,213 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "爱上杜美人",
+        "enablePullDownRefresh": true,
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/hotel/list",
+      "style": {
+        "navigationBarTitleText": "酒店列表",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/hotel/detail",
+      "style": {
+        "navigationBarTitleText": "酒店详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/hotel/room-detail",
+      "style": {
+        "navigationBarTitleText": "房间详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/hotel/book-confirm",
+      "style": {
+        "navigationBarTitleText": "确认订单",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/hotel/order-detail",
+      "style": {
+        "navigationBarTitleText": "订单详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/hotel/unlock",
+      "style": {
+        "navigationBarTitleText": "开锁",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mall/index",
+      "style": {
+        "navigationBarTitleText": "商城",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mall/product-detail",
+      "style": {
+        "navigationBarTitleText": "商品详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mall/cart",
+      "style": {
+        "navigationBarTitleText": "购物车",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mall/order-confirm",
+      "style": {
+        "navigationBarTitleText": "确认订单",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mall/order-detail",
+      "style": {
+        "navigationBarTitleText": "订单详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mall/search",
+      "style": {
+        "navigationBarTitleText": "搜索商品",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mall/review",
+      "style": {
+        "navigationBarTitleText": "评价商品",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mall/coupons",
+      "style": {
+        "navigationBarTitleText": "我的优惠券",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/scan/index",
+      "style": {
+        "navigationBarTitleText": "扫一扫",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/distribution/index",
+      "style": {
+        "navigationBarTitleText": "赚钱",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/user/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/user/login",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "tabBar": {
+    "custom": true,
+    "color": "#999999",
+    "selectedColor": "#d746f0",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "/static/icons/home.png",
+        "selectedIconPath": "/static/icons/home-active.png"
+      },
+      {
+        "pagePath": "pages/mall/index",
+        "text": "优物",
+        "iconPath": "/static/icons/shop.png",
+        "selectedIconPath": "/static/icons/shop-active.png"
+      },
+      {
+        "pagePath": "pages/distribution/index",
+        "text": "赚钱",
+        "iconPath": "/static/icons/money.png",
+        "selectedIconPath": "/static/icons/money-active.png"
+      },
+      {
+        "pagePath": "pages/user/index",
+        "text": "我的",
+        "iconPath": "/static/icons/user.png",
+        "selectedIconPath": "/static/icons/user-active.png"
+      }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "爱上杜美人",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F8F8F8",
+    "backgroundColorTop": "#F8F8F8",
+    "backgroundColorBottom": "#F8F8F8",
+    "navigationBarHeight": "44px",
+    "transparentTitle": "auto",
+    "titleNView": {
+      "backgroundColor": "#FFFFFF",
+      "titleColor": "#333333",
+      "buttons": [],
+      "searchInput": {
+        "backgroundColor": "#F5F5F5",
+        "borderRadius": "20px",
+        "placeholder": "搜索酒店、商品",
+        "disabled": true
+      }
+    },
+    "pageOrientation": "portrait"
+  },
+  "condition": {
+    "current": 0,
+    "list": [
+      {
+        "name": "首页",
+        "path": "pages/index/index",
+        "query": ""
+      },
+      {
+        "name": "商城",
+        "path": "pages/mall/index",
+        "query": ""
+      },
+      {
+        "name": "扫码",
+        "path": "pages/scan/index",
+        "query": ""
+      }
+    ]
+  }
+}

@@ -1,0 +1,114 @@
+// 颜色系统
+$primary-color: #d746f0;           // 主色调
+$primary-light: #e173f5;           // 主色调浅色
+$primary-dark: #be32d7;            // 主色调深色
+
+$secondary-color: #24c0fc;         // 辅助色
+$secondary-light: #5fcdfa;         // 辅助色浅色
+$secondary-dark: #0fa5dc;          // 辅助色深色
+
+$accent-color: #F472B6;            // 强调色（浅粉红）
+
+// 中性色
+$text-primary: #333333;            // 主要文字颜色
+$text-secondary: #666666;          // 次要文字颜色
+$text-tertiary: #999999;           // 三级文字颜色
+$text-placeholder: #CCCCCC;        // 占位符颜色
+
+$border-color: #E5E5E5;            // 边框颜色
+$border-light: #F0F0F0;            // 浅边框颜色
+$divider-color: #F5F5F5;           // 分割线颜色
+
+$background-primary: #FFFFFF;      // 主背景色
+$background-secondary: #F8F8F8;    // 次要背景色
+$background-tertiary: #F5F5F5;     // 三级背景色
+
+// 状态颜色
+$success-color: #10c467;           // 成功色
+$warning-color: #F59E0B;           // 警告色
+$error-color: #EF4444;             // 错误色
+$info-color: #3B82F6;              // 信息色
+
+// 字体大小
+$font-size-xs: 24rpx;              // 超小字体
+$font-size-sm: 28rpx;              // 小字体
+$font-size-base: 32rpx;            // 基础字体
+$font-size-lg: 36rpx;              // 大字体
+$font-size-xl: 40rpx;              // 超大字体
+$font-size-2xl: 48rpx;             // 标题字体
+$font-size-3xl: 56rpx;             // 大标题字体
+
+// 行高
+$line-height-xs: 1.2;
+$line-height-sm: 1.3;
+$line-height-base: 1.4;
+$line-height-lg: 1.5;
+$line-height-xl: 1.6;
+
+// 字重
+$font-weight-light: 300;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-Heavy: 900;
+
+// 间距
+$spacing-xs: 8rpx;
+$spacing-sm: 16rpx;
+$spacing-base: 24rpx;
+$spacing-lg: 32rpx;
+$spacing-xl: 48rpx;
+$spacing-2xl: 64rpx;
+
+// 圆角
+$border-radius-xs: 4rpx;
+$border-radius-sm: 8rpx;
+$border-radius-base: 12rpx;
+$border-radius-lg: 16rpx;
+$border-radius-xl: 24rpx;
+$border-radius-2xl: 32rpx;
+$border-radius-full: 9999rpx;
+
+// 渐变色
+$gradient-primary: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+$gradient-secondary: linear-gradient(135deg, $primary-light 0%, $primary-color 100%);
+$gradient-tertiary: linear-gradient(135deg, $primary-dark 0%, $primary-light 100%);
+$gradient-success: linear-gradient(135deg, $success-color 0%, $primary-color 100%);
+$gradient-accent: linear-gradient(135deg, #ffb6c1, #ff69b4);
+$gradient-warning: linear-gradient(135deg, #ffe96b 0%, #ffb300 100%);
+
+// 阴影
+$shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+$shadow-base: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+$shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+$shadow-xl: 0 16rpx 48rpx rgba(0, 0, 0, 0.16);
+
+// Z-index层级
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
+
+// 容器宽度
+$container-padding: 32rpx;         // 容器左右边距
+$page-padding: 32rpx;              // 页面左右边距
+
+// 动画时间
+$transition-fast: 0.15s;
+$transition-base: 0.3s;
+$transition-slow: 0.5s;
+
+// 动画缓动函数
+$ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+$ease-out: cubic-bezier(0, 0, 0.2, 1);
+$ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+// 断点
+$breakpoint-sm: 576px;             // 小屏幕
+$breakpoint-md: 768px;             // 中等屏幕
+$breakpoint-lg: 992px;             // 大屏幕
+$breakpoint-xl: 1200px;            // 超大屏幕

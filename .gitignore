@@ -1,0 +1,14 @@
+.tmp
+*.log
+/dist
+/build
+/coverage
+/node_modules
+/public
+/tmp
+.DS_Store
+.env
+.env.local
+.env.development
+.idea
+package-lock.json

@@ -1,0 +1,324 @@
+// 样式重置和基础样式
+@import './variables.scss';
+
+// 重置默认样式
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+// 全局字体设置
+page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: $font-size-base;
+  line-height: $line-height-base;
+  color: $text-primary;
+  background-color: $background-secondary;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// 容器通用样式
+.container {
+  padding-left: $container-padding;
+  padding-right: $container-padding;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// 页面通用样式
+.page {
+  min-height: 100vh;
+  background-color: $background-secondary;
+}
+
+// 内容区域
+.page-content {
+  padding: $page-padding;
+}
+
+// 标题样式
+.title {
+  &-1 {
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    line-height: $line-height-sm;
+    color: $text-primary;
+  }
+  
+  &-2 {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
+    line-height: $line-height-sm;
+    color: $text-primary;
+  }
+  
+  &-3 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-medium;
+    line-height: $line-height-base;
+    color: $text-primary;
+  }
+}
+
+// 文本样式
+.text {
+  &-primary {
+    color: $text-primary;
+  }
+  
+  &-secondary {
+    color: $text-secondary;
+  }
+  
+  &-tertiary {
+    color: $text-tertiary;
+  }
+  
+  &-xs {
+    font-size: $font-size-xs;
+  }
+  
+  &-sm {
+    font-size: $font-size-sm;
+  }
+  
+  &-base {
+    font-size: $font-size-base;
+  }
+  
+  &-lg {
+    font-size: $font-size-lg;
+  }
+  
+  &-xl {
+    font-size: $font-size-xl;
+  }
+  
+  &-center {
+    text-align: center;
+  }
+  
+  &-left {
+    text-align: left;
+  }
+  
+  &-right {
+    text-align: right;
+  }
+  
+  &-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  &-ellipsis-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    word-break: break-all;
+  }
+}
+
+// 布局工具类
+.flex {
+  display: flex;
+  
+  &-row {
+    flex-direction: row;
+  }
+  
+  &-column {
+    flex-direction: column;
+  }
+  
+  &-center {
+    justify-content: center;
+    align-items: center;
+  }
+  
+  &-between {
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  &-around {
+    justify-content: space-around;
+    align-items: center;
+  }
+  
+  &-start {
+    justify-content: flex-start;
+    align-items: center;
+  }
+  
+  &-end {
+    justify-content: flex-end;
+    align-items: center;
+  }
+  
+  &-1 {
+    flex: 1;
+  }
+}
+
+// 间距工具类
+.m {
+  &-0 { margin: 0; }
+  &-xs { margin: $spacing-xs; }
+  &-sm { margin: $spacing-sm; }
+  &-base { margin: $spacing-base; }
+  &-lg { margin: $spacing-lg; }
+  &-xl { margin: $spacing-xl; }
+  
+  &t {
+    &-0 { margin-top: 0; }
+    &-xs { margin-top: $spacing-xs; }
+    &-sm { margin-top: $spacing-sm; }
+    &-base { margin-top: $spacing-base; }
+    &-lg { margin-top: $spacing-lg; }
+    &-xl { margin-top: $spacing-xl; }
+  }
+  
+  &r {
+    &-0 { margin-right: 0; }
+    &-xs { margin-right: $spacing-xs; }
+    &-sm { margin-right: $spacing-sm; }
+    &-base { margin-right: $spacing-base; }
+    &-lg { margin-right: $spacing-lg; }
+    &-xl { margin-right: $spacing-xl; }
+  }
+  
+  &b {
+    &-0 { margin-bottom: 0; }
+    &-xs { margin-bottom: $spacing-xs; }
+    &-sm { margin-bottom: $spacing-sm; }
+    &-base { margin-bottom: $spacing-base; }
+    &-lg { margin-bottom: $spacing-lg; }
+    &-xl { margin-bottom: $spacing-xl; }
+  }
+  
+  &l {
+    &-0 { margin-left: 0; }
+    &-xs { margin-left: $spacing-xs; }
+    &-sm { margin-left: $spacing-sm; }
+    &-base { margin-left: $spacing-base; }
+    &-lg { margin-left: $spacing-lg; }
+    &-xl { margin-left: $spacing-xl; }
+  }
+}
+
+.p {
+  &-0 { padding: 0; }
+  &-xs { padding: $spacing-xs; }
+  &-sm { padding: $spacing-sm; }
+  &-base { padding: $spacing-base; }
+  &-lg { padding: $spacing-lg; }
+  &-xl { padding: $spacing-xl; }
+  
+  &t {
+    &-0 { padding-top: 0; }
+    &-xs { padding-top: $spacing-xs; }
+    &-sm { padding-top: $spacing-sm; }
+    &-base { padding-top: $spacing-base; }
+    &-lg { padding-top: $spacing-lg; }
+    &-xl { padding-top: $spacing-xl; }
+  }
+  
+  &r {
+    &-0 { padding-right: 0; }
+    &-xs { padding-right: $spacing-xs; }
+    &-sm { padding-right: $spacing-sm; }
+    &-base { padding-right: $spacing-base; }
+    &-lg { padding-right: $spacing-lg; }
+    &-xl { padding-right: $spacing-xl; }
+  }
+  
+  &b {
+    &-0 { padding-bottom: 0; }
+    &-xs { padding-bottom: $spacing-xs; }
+    &-sm { padding-bottom: $spacing-sm; }
+    &-base { padding-bottom: $spacing-base; }
+    &-lg { padding-bottom: $spacing-lg; }
+    &-xl { padding-bottom: $spacing-xl; }
+  }
+  
+  &l {
+    &-0 { padding-left: 0; }
+    &-xs { padding-left: $spacing-xs; }
+    &-sm { padding-left: $spacing-sm; }
+    &-base { padding-left: $spacing-base; }
+    &-lg { padding-left: $spacing-lg; }
+    &-xl { padding-left: $spacing-xl; }
+  }
+}
+
+// 圆角工具类
+.rounded {
+  &-xs { border-radius: $border-radius-xs; }
+  &-sm { border-radius: $border-radius-sm; }
+  &-base { border-radius: $border-radius-base; }
+  &-lg { border-radius: $border-radius-lg; }
+  &-xl { border-radius: $border-radius-xl; }
+  &-full { border-radius: $border-radius-full; }
+}
+
+// 阴影工具类
+.shadow {
+  &-sm { box-shadow: $shadow-sm; }
+  &-base { box-shadow: $shadow-base; }
+  &-lg { box-shadow: $shadow-lg; }
+  &-xl { box-shadow: $shadow-xl; }
+}
+
+// 颜色工具类
+.bg {
+  &-primary { background-color: $primary-color; }
+  &-secondary { background-color: $secondary-color; }
+  &-white { background-color: $background-primary; }
+  &-gray { background-color: $background-secondary; }
+  &-light { background-color: $background-tertiary; }
+}
+
+.text {
+  &-primary-color { color: $primary-color; }
+  &-secondary-color { color: $secondary-color; }
+  &-success { color: $success-color; }
+  &-warning { color: $warning-color; }
+  &-error { color: $error-color; }
+  &-info { color: $info-color; }
+}
+
+// 隐藏滚动条
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// 安全区域适配
+.safe-area-inset-top {
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-inset-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-inset-left {
+  padding-left: constant(safe-area-inset-left);
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-inset-right {
+  padding-right: constant(safe-area-inset-right);
+  padding-right: env(safe-area-inset-right);
+}
