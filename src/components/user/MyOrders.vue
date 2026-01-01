@@ -34,7 +34,7 @@
         <view class="order-header">
           <view class="header-left">
             <Icon :name="order.type === 'hotel' ? 'bed' : 'shopping-cart'" size="xsmall" :color="order.type === 'hotel' ? '#be32d7' : '#10b981'" />
-            <text class="order-type-label">{{ order.type === 'hotel' ? '预约订单' : '商城订单' }}</text>
+            <text class="order-type-label">{{ order.type === 'hotel' ? '酒店订单' : '商城订单' }}</text>
           </view>
           <text class="order-status" :class="`order-status--${order.status}`">{{ getStatusText(order.status, order.type) }}</text>
         </view>
@@ -124,7 +124,8 @@ export default {
     // 订单类型
     const orderTypes = [
       { label: '全部订单', value: 'all', icon: 'list' },
-      { label: '预约订单', value: 'hotel', icon: 'bed' },
+      { label: '酒店订单', value: 'hotel', icon: 'bed' },
+      { label: '租借订单', value: 'rental', icon: 'wardrobe' },
       { label: '商城订单', value: 'product', icon: 'shopping-cart' }
     ]
 

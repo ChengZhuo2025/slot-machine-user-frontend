@@ -136,11 +136,12 @@
     }
   ],
   "tabBar": {
+    "height": "0px",
     "custom": true,
-    "color": "#999999",
-    "selectedColor": "#d746f0",
-    "backgroundColor": "#ffffff",
-    "borderStyle": "black",
+    "color": "transparent",
+    "selectedColor": "transparent",
+    "borderStyle": "none",
+    "backgroundColor": "transparent",
     "list": [
       {
         "pagePath": "pages/index/index",
