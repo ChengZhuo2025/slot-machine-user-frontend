@@ -4,7 +4,7 @@ import { get, post, put } from './request'
 
 // 用户登录
 export const login = (data) => {
-  return post('/auth/login', data)
+  return post('/user/login', data)
 }
 
 // 用户注册
@@ -54,7 +54,7 @@ export const bindPhone = (data) => {
 
 // 发送验证码
 export const sendSmsCode = (phone) => {
-  return post('/user/sms-code', { phone })
+  return post('/user/send-code', { phone })
 }
 
 // 上传头像

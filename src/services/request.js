@@ -21,9 +21,10 @@ const requestInterceptor = (config) => {
 // 响应拦截器
 const responseInterceptor = (response) => {
   const { data, statusCode } = response
-  
+
   if (statusCode === 200) {
-    if (data.code === 0) {
+    // 兼容两种响应格式：code === 0 或 code === 200 都表示成功
+    if (data.code === 0 || data.code === 200) {
       return data.data
     } else {
       // 业务错误

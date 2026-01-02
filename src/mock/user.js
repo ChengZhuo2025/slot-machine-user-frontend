@@ -1,15 +1,80 @@
 // 用户相关Mock数据
 export default function(Mock, mockResponse, mockPageResponse) {
   
-  // 用户登录
+  // 模拟已注册用户列表（用于判断新老用户）
+  const registeredUsers = ['13800138000', '13900139000', '18800188000']
+
+  // 用户登录 - 支持多种登录方式
   Mock.mock(/\/api\/user\/login/, 'post', (options) => {
     const body = JSON.parse(options.body)
-    const { phone, password, code } = body
-    
-    // 模拟登录验证
+    const { phone, password, code, loginType } = body
+
+    // 验证码登录（演示模式：任意手机号 + 任意6位验证码）
+    if (loginType === 'sms') {
+      if (phone && /^1[3-9]\d{9}$/.test(phone) && code && /^\d{6}$/.test(code)) {
+        const isNewUser = !registeredUsers.includes(phone)
+        return mockResponse({
+          token: Mock.Random.string('lower', 32),
+          isNewUser: isNewUser,
+          user: {
+            id: isNewUser ? Mock.Random.integer(1000, 9999) : 1,
+            phone: phone,
+            nickname: isNewUser ? '新用户' + phone.slice(-4) : '演示用户',
+            avatar: 'https://picsum.photos/200/200?random=' + Mock.Random.integer(1, 100),
+            gender: 0,
+            birthday: '',
+            email: '',
+            realName: '',
+            idCard: '',
+            isRealNameAuth: false,
+            registerTime: isNewUser ? Mock.Random.datetime('yyyy-MM-dd HH:mm:ss') : '2024-01-01 10:00:00',
+            lastLoginTime: Mock.Random.datetime('yyyy-MM-dd HH:mm:ss')
+          },
+          member: isNewUser ? null : {
+            id: 1,
+            userId: 1,
+            level: 2,
+            levelName: '银卡会员',
+            points: 1580,
+            balance: 299.80,
+            expireTime: '2025-12-31 23:59:59',
+            status: 'active',
+            benefits: ['专享95折优惠', '生日特惠券', '积分双倍', '优先客服']
+          }
+        })
+      }
+      return mockResponse(null, '验证码错误', 400)
+    }
+
+    // 微信登录（H5模拟 / 小程序）
+    if (loginType === 'wechat' || loginType === 'wechat_h5') {
+      return mockResponse({
+        token: Mock.Random.string('lower', 32),
+        isNewUser: true,
+        needBindPhone: false, // 可选绑定手机号
+        user: {
+          id: Mock.Random.integer(1000, 9999),
+          phone: '',
+          nickname: '微信用户' + Mock.Random.integer(1000, 9999),
+          avatar: 'https://picsum.photos/200/200?random=' + Mock.Random.integer(1, 100),
+          gender: Mock.Random.integer(0, 2),
+          birthday: '',
+          email: '',
+          openId: 'wx_' + Mock.Random.string('lower', 28),
+          unionId: 'union_' + Mock.Random.string('lower', 28),
+          isRealNameAuth: false,
+          registerTime: Mock.Random.datetime('yyyy-MM-dd HH:mm:ss'),
+          lastLoginTime: Mock.Random.datetime('yyyy-MM-dd HH:mm:ss')
+        },
+        member: null
+      })
+    }
+
+    // 兼容旧的密码登录方式
     if (phone === '13800138000' && (password === '123456' || code === '1234')) {
       return mockResponse({
         token: Mock.Random.string('lower', 32),
+        isNewUser: false,
         user: {
           id: 1,
           phone: phone,
@@ -41,20 +106,27 @@ export default function(Mock, mockResponse, mockPageResponse) {
           ]
         }
       })
-    } else {
-      return mockResponse(null, '账号或密码错误', 400)
     }
+
+    return mockResponse(null, '登录失败，请检查账号信息', 400)
   })
   
   // 发送验证码
   Mock.mock(/\/api\/user\/send-code/, 'post', (options) => {
     const body = JSON.parse(options.body)
     const { phone, type } = body
-    
+
+    // 验证手机号格式
+    if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+      return mockResponse(null, '请输入正确的手机号', 400)
+    }
+
     return mockResponse({
       success: true,
       message: '验证码已发送',
-      codeId: Mock.Random.string('lower', 16)
+      codeId: Mock.Random.string('lower', 16),
+      // 演示模式：返回测试验证码
+      devCode: '123456'
     })
   })
   
