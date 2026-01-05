@@ -12,3 +12,4 @@
 .env.development
 .idea
 package-lock.json
+.aider*
