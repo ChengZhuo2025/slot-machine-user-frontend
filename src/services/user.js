@@ -78,12 +78,67 @@ export const getPoints = () => {
   return get('/user/points')
 }
 
+// CHK005: 头像上传配置
+const AVATAR_CONFIG = {
+  maxSize: 2 * 1024 * 1024,  // 最大 2MB
+  allowedTypes: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+  maxSizeText: '2MB'
+}
+
+/**
+ * CHK005: 验证头像文件
+ * @param {string} filePath - 文件路径
+ * @returns {Promise<{valid: boolean, error?: string}>}
+ */
+const validateAvatarFile = (filePath) => {
+  return new Promise((resolve) => {
+    // 检查文件扩展名
+    const ext = filePath.split('.').pop()?.toLowerCase()
+    if (!AVATAR_CONFIG.allowedTypes.includes(ext)) {
+      resolve({
+        valid: false,
+        error: `仅支持 ${AVATAR_CONFIG.allowedTypes.join('/')} 格式`
+      })
+      return
+    }
+
+    // 获取文件信息检查大小
+    uni.getFileInfo({
+      filePath,
+      success: (res) => {
+        if (res.size > AVATAR_CONFIG.maxSize) {
+          resolve({
+            valid: false,
+            error: `图片大小不能超过 ${AVATAR_CONFIG.maxSizeText}`
+          })
+        } else {
+          resolve({ valid: true })
+        }
+      },
+      fail: () => {
+        // 无法获取文件信息，允许上传让服务器验证
+        resolve({ valid: true })
+      }
+    })
+  })
+}
+
 /**
  * 上传头像
  * @param {string} filePath - 本地文件路径
  * @returns {Promise<{url: string}>}
  */
-export const uploadAvatar = (filePath) => {
+export const uploadAvatar = async (filePath) => {
+  // CHK005: 先验证文件
+  const validation = await validateAvatarFile(filePath)
+  if (!validation.valid) {
+    uni.showToast({
+      title: validation.error,
+      icon: 'none'
+    })
+    throw new Error(validation.error)
+  }
+
   const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
   return new Promise((resolve, reject) => {
     uni.uploadFile({

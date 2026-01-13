@@ -3,7 +3,7 @@ import App from './App.vue'
 import pinia from './stores'
 import './styles/index.scss'
 
-// 导入Mock服务（始终启用，用于演示）
+// T720: 导入Mock服务（由 mock/index.js 中的 USE_MOCK 标志控制是否启用）
 import('./mock')
 
 export function createApp() {

@@ -1,11 +1,13 @@
 /**
  * 用户状态管理
  * T040-T045: Store 更新支持新的 token 格式
+ * CHK026: 使用安全存储
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as userApi from '@/services/user.js'
 import * as authApi from '@/services/auth.js'
+import { setSecure, getSecure, removeSecure } from '@/utils/secureStorage.js'
 
 export const useUserStore = defineStore(
   'user',
@@ -78,9 +80,9 @@ export const useUserStore = defineStore(
           memberInfo.value = response.user.member_level
         }
 
-        // 同步到本地存储（持久化插件会自动处理，但这里也手动同步以确保 request.js 能立即使用）
-        uni.setStorageSync('token', accessToken.value)
-        uni.setStorageSync('refreshToken', refreshToken.value)
+        // CHK026: 同步到本地存储（使用安全存储）
+        setSecure('token', accessToken.value)
+        setSecure('refreshToken', refreshToken.value)
         uni.setStorageSync('tokenExpireTime', tokenExpireTime.value)
 
         return response
@@ -99,9 +101,9 @@ export const useUserStore = defineStore(
       refreshToken.value = newTokenData.refresh_token
       tokenExpireTime.value = newTokenData.expires_at * 1000
 
-      // 同步到本地存储
-      uni.setStorageSync('token', accessToken.value)
-      uni.setStorageSync('refreshToken', refreshToken.value)
+      // CHK026: 同步到本地存储（使用安全存储）
+      setSecure('token', accessToken.value)
+      setSecure('refreshToken', refreshToken.value)
       uni.setStorageSync('tokenExpireTime', tokenExpireTime.value)
     }
 
@@ -126,9 +128,9 @@ export const useUserStore = defineStore(
         memberInfo.value = {}
         wallet.value = null
 
-        // 清除本地存储
-        uni.removeStorageSync('token')
-        uni.removeStorageSync('refreshToken')
+        // CHK026: 清除本地存储（使用安全存储）
+        removeSecure('token')
+        removeSecure('refreshToken')
         uni.removeStorageSync('tokenExpireTime')
         uni.removeStorageSync('userInfo')
         uni.removeStorageSync('memberInfo')

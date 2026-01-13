@@ -127,6 +127,8 @@ import Icon from '@/components/common/Icon.vue'
 import * as authApi from '@/services/auth'
 // T320: 导入登录守卫工具
 import { getRedirectPath, clearRedirectPath } from '@/utils/authGuard'
+// CHK002: 导入验证码限制工具
+import * as codeLimit from '@/utils/codeLimit'
 
 export default {
   name: 'UserLoginPage',
@@ -204,7 +206,7 @@ export default {
       }
     }
 
-    // T102-T106: 手机号验证码登录
+    // T102-T106, CHK002: 手机号验证码登录（含错误次数限制）
     const handleLogin = async () => {
       if (!canLogin.value) {
         if (!form.agreed) {
@@ -213,6 +215,17 @@ export default {
             icon: 'none'
           })
         }
+        return
+      }
+
+      // CHK002: 检查是否被锁定
+      const lockStatus = codeLimit.checkLocked(form.phone)
+      if (lockStatus.locked) {
+        uni.showToast({
+          title: `账号已锁定，请${codeLimit.formatLockTime(lockStatus.remainingTime)}后重试`,
+          icon: 'none',
+          duration: 3000
+        })
         return
       }
 
@@ -225,6 +238,9 @@ export default {
           code: form.code,
           loginType: 'sms'
         })
+
+        // CHK002: 登录成功，清除错误记录
+        codeLimit.clearErrors(form.phone)
 
         // T104: 处理 is_new_user 标志
         if (response.is_new_user) {
@@ -244,10 +260,21 @@ export default {
           handleLoginSuccess()
         }, 1000)
       } catch (error) {
+        // CHK002: 记录验证码错误
+        const errorResult = codeLimit.recordError(form.phone)
+
         // T105: 显示错误信息
+        let errorMsg = error.message || '登录失败'
+        if (errorResult.locked) {
+          errorMsg = `错误次数过多，账号已锁定15分钟`
+        } else if (errorResult.remainingAttempts <= 2) {
+          errorMsg = `${errorMsg}，还剩${errorResult.remainingAttempts}次机会`
+        }
+
         uni.showToast({
-          title: error.message || '登录失败',
-          icon: 'none'
+          title: errorMsg,
+          icon: 'none',
+          duration: 3000
         })
       } finally {
         loading.value = false
@@ -301,17 +328,45 @@ export default {
           handleLoginSuccess()
         }, 1000)
       } catch (error) {
-        // T204: 处理微信授权拒绝
-        if (error.errMsg && error.errMsg.includes('deny')) {
-          uni.showToast({
-            title: '需要微信授权才能登录',
-            icon: 'none'
-          })
-        } else {
-          uni.showToast({
-            title: error.message || '微信登录失败',
-            icon: 'none'
-          })
+        // CHK003: 微信登录降级方案 - 详细错误处理
+        let errorMsg = '微信登录失败'
+        let showFallback = false
+
+        if (error.errMsg) {
+          if (error.errMsg.includes('deny') || error.errMsg.includes('auth deny')) {
+            // T204: 用户拒绝授权
+            errorMsg = '需要微信授权才能登录'
+          } else if (error.errMsg.includes('cancel')) {
+            // 用户取消
+            errorMsg = '已取消微信登录'
+          } else if (error.errMsg.includes('timeout')) {
+            // 超时
+            errorMsg = '微信登录超时，请重试'
+          } else if (error.errMsg.includes('fail')) {
+            // 系统拦截或其他失败
+            errorMsg = '微信登录暂不可用'
+            showFallback = true
+          }
+        } else if (error.message) {
+          errorMsg = error.message
+        }
+
+        uni.showToast({
+          title: errorMsg,
+          icon: 'none',
+          duration: 2500
+        })
+
+        // CHK003: 降级提示 - 引导用户使用手机号登录
+        if (showFallback) {
+          setTimeout(() => {
+            uni.showModal({
+              title: '提示',
+              content: '微信登录暂时不可用，请使用手机号验证码登录',
+              showCancel: false,
+              confirmText: '知道了'
+            })
+          }, 500)
         }
       } finally {
         loading.value = false

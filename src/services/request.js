@@ -2,9 +2,22 @@
 // T010: 使用环境变量配置 baseURL
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
 
+// T700: 导入错误处理工具
+import { getHttpErrorMessage, showError } from '@/utils/errorHandler'
+// CHK026: 导入安全存储工具
+import { getSecure, removeSecure } from '@/utils/secureStorage'
+
 // T011: Token 刷新队列机制
 let isRefreshing = false
 let failedQueue = []
+
+// CHK004: Token 刷新重试配置
+const REFRESH_RETRY_COUNT = 3      // 最大重试次数
+const REFRESH_RETRY_DELAY = 1000   // 重试间隔(毫秒)
+
+// CHK022: 队列超时和大小限制配置
+const QUEUE_TIMEOUT = 10000        // 队列等待超时(毫秒)
+const MAX_QUEUE_SIZE = 50          // 最大队列大小
 
 // T012: 处理队列中的请求
 const processQueue = (error, token = null) => {
@@ -38,10 +51,11 @@ const getUserStore = () => {
   return userStore
 }
 
-// T013: Token 过期预检查（<5 分钟触发刷新）
+// T013, CHK004: Token 过期预检查（<5 分钟触发刷新，含重试机制）
 const checkAndRefreshToken = async () => {
   const tokenExpireTime = uni.getStorageSync('tokenExpireTime')
-  const refreshToken = uni.getStorageSync('refreshToken')
+  // CHK026: 使用安全存储读取 refreshToken
+  const refreshToken = getSecure('refreshToken')
 
   // 没有 refreshToken 或没有过期时间，不处理
   if (!refreshToken || !tokenExpireTime) {
@@ -53,44 +67,85 @@ const checkAndRefreshToken = async () => {
   const fiveMinutes = 5 * 60 * 1000
 
   if (now > tokenExpireTime - fiveMinutes) {
-    // T014: 如果正在刷新，加入队列等待
+    // T014, CHK022: 如果正在刷新，加入队列等待（含超时和大小限制）
     if (isRefreshing) {
+      // CHK022: 检查队列大小
+      if (failedQueue.length >= MAX_QUEUE_SIZE) {
+        throw new Error('请求队列已满，请稍后重试')
+      }
+
+      // CHK022: 带超时的队列等待
       return new Promise((resolve, reject) => {
-        failedQueue.push({ resolve, reject })
+        const timeoutId = setTimeout(() => {
+          // 从队列中移除
+          const index = failedQueue.findIndex(p => p.resolve === resolve)
+          if (index > -1) {
+            failedQueue.splice(index, 1)
+          }
+          reject(new Error('Token 刷新超时'))
+        }, QUEUE_TIMEOUT)
+
+        failedQueue.push({
+          resolve: (token) => {
+            clearTimeout(timeoutId)
+            resolve(token)
+          },
+          reject: (error) => {
+            clearTimeout(timeoutId)
+            reject(error)
+          }
+        })
       })
     }
 
     isRefreshing = true
 
-    try {
-      const auth = await getAuthApi()
-      const newTokenData = await auth.refreshToken(refreshToken)
+    // CHK004: 带重试的刷新逻辑
+    let lastError = null
+    for (let attempt = 1; attempt <= REFRESH_RETRY_COUNT; attempt++) {
+      try {
+        const auth = await getAuthApi()
+        const newTokenData = await auth.refreshToken(refreshToken)
 
-      // 更新本地存储
-      uni.setStorageSync('token', newTokenData.access_token)
-      uni.setStorageSync('refreshToken', newTokenData.refresh_token)
-      uni.setStorageSync('tokenExpireTime', newTokenData.expires_at * 1000)
+        // 更新本地存储
+        uni.setStorageSync('token', newTokenData.access_token)
+        uni.setStorageSync('refreshToken', newTokenData.refresh_token)
+        uni.setStorageSync('tokenExpireTime', newTokenData.expires_at * 1000)
 
-      // 处理队列中的请求
-      processQueue(null, newTokenData.access_token)
+        // 处理队列中的请求
+        processQueue(null, newTokenData.access_token)
+        isRefreshing = false
 
-      return newTokenData.access_token
-    } catch (error) {
-      // 刷新失败，处理队列中的请求
-      processQueue(error, null)
+        return newTokenData.access_token
+      } catch (error) {
+        lastError = error
+        console.warn(`Token 刷新失败 (尝试 ${attempt}/${REFRESH_RETRY_COUNT}):`, error.message)
 
-      // 清除登录状态
-      uni.removeStorageSync('token')
-      uni.removeStorageSync('refreshToken')
-      uni.removeStorageSync('tokenExpireTime')
+        // 如果是 401 错误，不再重试（refresh_token 已失效）
+        if (error.message?.includes('401') || error.statusCode === 401) {
+          break
+        }
 
-      // 跳转登录页
-      uni.navigateTo({ url: '/pages/user/login' })
-
-      throw error
-    } finally {
-      isRefreshing = false
+        // 等待后重试
+        if (attempt < REFRESH_RETRY_COUNT) {
+          await new Promise(resolve => setTimeout(resolve, REFRESH_RETRY_DELAY))
+        }
+      }
     }
+
+    // 所有重试都失败
+    isRefreshing = false
+    processQueue(lastError, null)
+
+    // CHK026: 清除登录状态（使用安全存储）
+    removeSecure('token')
+    removeSecure('refreshToken')
+    uni.removeStorageSync('tokenExpireTime')
+
+    // 跳转登录页
+    uni.navigateTo({ url: '/pages/user/login' })
+
+    throw lastError
   }
 
   return null
@@ -98,8 +153,8 @@ const checkAndRefreshToken = async () => {
 
 // 请求拦截器
 const requestInterceptor = async (config) => {
-  // 添加token
-  let token = uni.getStorageSync('token')
+  // CHK026: 使用安全存储读取 token
+  let token = getSecure('token')
 
   // T013: 检查是否需要刷新 token（跳过刷新接口本身）
   if (!config.url.includes('/auth/refresh')) {
@@ -160,12 +215,13 @@ const responseInterceptor = (response) => {
     })
     throw new Error('发送过于频繁，请稍后再试')
   } else {
-    // HTTP错误
+    // T700: HTTP错误 - 使用集中错误处理
+    const errorMsg = getHttpErrorMessage(statusCode)
     uni.showToast({
-      title: '网络请求失败',
+      title: errorMsg,
       icon: 'none'
     })
-    throw new Error('网络请求失败')
+    throw new Error(errorMsg)
   }
 }
 

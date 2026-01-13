@@ -23,52 +23,38 @@
         />
       </view>
 
-      <view class="form-item" @click="showGenderPicker">
+      <view class="form-item form-item-gender">
         <text class="form-label">性别</text>
-        <view class="form-value">
-          <text class="value-text">{{ genderText }}</text>
-          <Icon name="chevron-right" size="small" color="#999" />
+        <radio-group class="gender-radio-group" @change="onGenderChange">
+          <label
+            v-for="item in genderOptions"
+            :key="item.value"
+            class="gender-radio-label"
+          >
+            <radio
+              :value="String(item.value)"
+              :checked="formData.gender === item.value"
+              color="#FF6B35"
+            />
+            <text class="radio-text">{{ item.label }}</text>
+          </label>
+        </radio-group>
+      </view>
+
+      <picker
+        mode="date"
+        :value="formData.birthday || todayDate"
+        :end="todayDate"
+        @change="onBirthdayChange"
+      >
+        <view class="form-item">
+          <text class="form-label">生日</text>
+          <view class="form-value">
+            <text class="value-text">{{ formData.birthday || '请选择生日' }}</text>
+            <Icon name="chevron-right" size="small" color="#999" />
+          </view>
         </view>
-      </view>
-
-      <view class="form-item" @click="showBirthdayPicker">
-        <text class="form-label">生日</text>
-        <view class="form-value">
-          <text class="value-text">{{ formData.birthday || '请选择生日' }}</text>
-          <Icon name="chevron-right" size="small" color="#999" />
-        </view>
-      </view>
-
-      <view class="form-item">
-        <text class="form-label">邮箱</text>
-        <input
-          v-model="formData.email"
-          class="form-input"
-          placeholder="请输入邮箱"
-          type="text"
-        />
-      </view>
-
-      <view class="form-item">
-        <text class="form-label">真实姓名</text>
-        <input
-          v-model="formData.realName"
-          class="form-input"
-          :placeholder="formData.isRealNameAuth ? '已实名认证' : '请输入真实姓名'"
-          :disabled="formData.isRealNameAuth"
-        />
-      </view>
-
-      <view class="form-item">
-        <text class="form-label">身份证号</text>
-        <input
-          v-model="formData.idCard"
-          class="form-input"
-          :placeholder="formData.isRealNameAuth ? '已实名认证' : '请输入身份证号'"
-          :disabled="formData.isRealNameAuth"
-          maxlength="18"
-        />
-      </view>
+      </picker>
     </view>
 
     <view class="profile-actions">
@@ -82,39 +68,17 @@
       </view>
 
       <!-- 保存修改按钮 -->
-      <button class="btn-save" @click="handleSave">保存修改</button>
+      <button class="btn-save" :disabled="saving" @click="handleSave">
+        {{ saving ? '保存中...' : '保存修改' }}
+      </button>
     </view>
-
-    <!-- 性别选择器 -->
-    <picker
-      v-if="genderPickerVisible"
-      mode="selector"
-      :range="genderOptions"
-      :range-key="'label'"
-      :value="genderIndex"
-      @change="onGenderChange"
-      @cancel="genderPickerVisible = false"
-    >
-      <view></view>
-    </picker>
-
-    <!-- 生日选择器 -->
-    <picker
-      v-if="birthdayPickerVisible"
-      mode="date"
-      :value="formData.birthday"
-      :end="todayDate"
-      @change="onBirthdayChange"
-      @cancel="birthdayPickerVisible = false"
-    >
-      <view></view>
-    </picker>
   </view>
 </template>
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
 import Icon from '../common/Icon.vue'
+import * as userApi from '@/services/user'
 
 export default {
   name: 'EditProfile',
@@ -129,37 +93,25 @@ export default {
   },
   emits: ['save', 'avatarChange'],
   setup(props, { emit }) {
+    // 保存状态
+    const saving = ref(false)
+
     // 表单数据
     const formData = reactive({
       avatar: '',
       nickname: '',
       gender: 0,
-      birthday: '',
-      email: '',
-      realName: '',
-      idCard: '',
-      isRealNameAuth: false
+      birthday: ''
     })
 
-    // 性别选择器
-    const genderPickerVisible = ref(false)
+    // 性别选项
     const genderOptions = [
       { label: '未设置', value: 0 },
       { label: '男', value: 1 },
       { label: '女', value: 2 }
     ]
 
-    const genderIndex = computed(() => {
-      return genderOptions.findIndex(item => item.value === formData.gender)
-    })
-
-    const genderText = computed(() => {
-      const option = genderOptions.find(item => item.value === formData.gender)
-      return option ? option.label : '未设置'
-    })
-
     // 生日选择器
-    const birthdayPickerVisible = ref(false)
     const todayDate = computed(() => {
       const today = new Date()
       return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -170,60 +122,51 @@ export default {
       Object.assign(formData, props.userInfo)
     })
 
-    // 选择头像
+    // 选择并上传头像
     const chooseAvatar = () => {
       uni.chooseImage({
         count: 1,
         sourceType: ['album', 'camera'],
-        success: (res) => {
-          formData.avatar = res.tempFilePaths[0]
-          // 这里应该上传到服务器
-          emit('avatarChange', res.tempFilePaths[0])
-          uni.showToast({
-            title: '头像已更新',
-            icon: 'success'
-          })
+        success: async (res) => {
+          const tempFilePath = res.tempFilePaths[0]
+
+          uni.showLoading({ title: '上传中...' })
+
+          try {
+            // 调用 API 上传头像
+            const result = await userApi.uploadAvatar(tempFilePath)
+
+            // 更新本地头像显示
+            formData.avatar = result.url || result.avatar_url
+
+            uni.hideLoading()
+            uni.showToast({
+              title: '头像已更新',
+              icon: 'success'
+            })
+
+            // 通知父组件
+            emit('avatarChange', formData.avatar)
+          } catch (error) {
+            uni.hideLoading()
+            console.error('头像上传失败:', error)
+          }
         }
       })
     }
 
-    // 显示性别选择器
-    const showGenderPicker = () => {
-      genderPickerVisible.value = true
-      // 触发picker显示需要在下一帧
-      setTimeout(() => {
-        const picker = document.querySelector('picker')
-        if (picker) {
-          picker.click()
-        }
-      }, 50)
-    }
-
     // 性别改变
     const onGenderChange = (e) => {
-      formData.gender = genderOptions[e.detail.value].value
-      genderPickerVisible.value = false
-    }
-
-    // 显示生日选择器
-    const showBirthdayPicker = () => {
-      birthdayPickerVisible.value = true
-      setTimeout(() => {
-        const picker = document.querySelectorAll('picker')[1]
-        if (picker) {
-          picker.click()
-        }
-      }, 50)
+      formData.gender = Number(e.detail.value)
     }
 
     // 生日改变
     const onBirthdayChange = (e) => {
       formData.birthday = e.detail.value
-      birthdayPickerVisible.value = false
     }
 
-    // 保存修改
-    const handleSave = () => {
+    // T510-T513: 保存修改 - 调用 API
+    const handleSave = async () => {
       // 验证必填项
       if (!formData.nickname) {
         uni.showToast({
@@ -233,31 +176,45 @@ export default {
         return
       }
 
-      // 验证邮箱格式
-      if (formData.email) {
-        const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailReg.test(formData.email)) {
+      // 防止重复提交
+      if (saving.value) return
+      saving.value = true
+
+      try {
+        // T510: 调用 API 更新个人信息
+        await userApi.updateProfile({
+          nickname: formData.nickname,
+          avatar: formData.avatar,
+          gender: formData.gender,
+          birthday: formData.birthday
+        })
+
+        // T512: 显示成功提示
+        uni.showToast({
+          title: '资料已更新',
+          icon: 'success'
+        })
+
+        // T513: 通知父组件刷新数据
+        emit('save', { ...formData })
+      } catch (error) {
+        console.error('更新个人信息失败:', error)
+        // T511: 处理昵称验证错误
+        const errorMsg = error.message || '更新失败'
+        if (errorMsg.includes('昵称') || errorMsg.includes('违规')) {
           uni.showToast({
-            title: '邮箱格式不正确',
+            title: '昵称包含违规内容',
             icon: 'none'
           })
-          return
-        }
-      }
-
-      // 验证身份证格式(如果填写了)
-      if (formData.idCard && !formData.isRealNameAuth) {
-        const idCardReg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/
-        if (!idCardReg.test(formData.idCard)) {
+        } else {
           uni.showToast({
-            title: '身份证号格式不正确',
+            title: errorMsg,
             icon: 'none'
           })
-          return
         }
+      } finally {
+        saving.value = false
       }
-
-      emit('save', { ...formData })
     }
 
     // 微信授权
@@ -296,16 +253,11 @@ export default {
 
     return {
       formData,
-      genderPickerVisible,
+      saving,
       genderOptions,
-      genderIndex,
-      genderText,
-      birthdayPickerVisible,
       todayDate,
       chooseAvatar,
-      showGenderPicker,
       onGenderChange,
-      showBirthdayPicker,
       onBirthdayChange,
       handleSave,
       handleWechatAuth
@@ -377,6 +329,13 @@ export default {
       border-bottom: none;
     }
 
+    &.form-item-gender {
+      .form-label {
+        align-self: flex-start;
+        padding-top: 8rpx;
+      }
+    }
+
     .form-label {
       font-size: $font-size-sm;
       color: $text-primary;
@@ -411,6 +370,24 @@ export default {
         font-size: $font-size-sm;
         color: $text-secondary;
       }
+    }
+  }
+}
+
+.gender-radio-group {
+  flex: 1;
+  @include flex();
+  justify-content: flex-end;
+  gap: $spacing-lg;
+
+  .gender-radio-label {
+    @include flex();
+    align-items: center;
+    gap: $spacing-xs;
+
+    .radio-text {
+      font-size: $font-size-sm;
+      color: $text-secondary;
     }
   }
 }
@@ -476,6 +453,11 @@ export default {
 
     &::after {
       border: none;
+    }
+
+    &[disabled] {
+      opacity: 0.6;
+      pointer-events: none;
     }
   }
 }
