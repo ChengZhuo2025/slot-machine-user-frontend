@@ -57,10 +57,11 @@
 </template>
 
 <script>
-import { ref} from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { ref } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import Icon from '@/components/common/Icon.vue'
 import CustomTabBar from "@/components/layout/CustomTabBar.vue"
+import { requireAuth } from '@/utils/authGuard'
 
 export default {
   name: 'ScanPage',
@@ -164,6 +165,11 @@ export default {
         url: '/pages/index/index'
       })
     }
+
+    // T309: 添加登录守卫
+    onShow(() => {
+      requireAuth()
+    })
 
     // 页面加载
     onLoad((options) => {

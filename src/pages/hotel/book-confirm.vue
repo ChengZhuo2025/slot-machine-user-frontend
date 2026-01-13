@@ -129,10 +129,11 @@
 
 <script>
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import Icon from '@/components/common/Icon.vue'
 import PriceDetail from '@/components/hotel/PriceDetail.vue'
 import PaymentMethod from '@/components/hotel/PaymentMethod.vue'
+import { requireAuth } from '@/utils/authGuard'
 import request from '@/utils/request'
 
 export default {
@@ -313,6 +314,11 @@ export default {
         })
       }
     }
+
+    // T306: 添加登录守卫
+    onShow(() => {
+      requireAuth()
+    })
 
     // 页面加载
     onLoad((options) => {

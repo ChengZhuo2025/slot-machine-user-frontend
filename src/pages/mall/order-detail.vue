@@ -219,9 +219,11 @@
 
 <script>
 import { ref, computed, onMounted } from "vue";
+import { onShow } from "@dcloudio/uni-app";
 import { useRouter, useRoute } from "vue-router";
 import Icon from "@/components/common/Icon.vue";
 import PriceDetail from "@/components/hotel/PriceDetail.vue";
+import { requireAuth } from "@/utils/authGuard";
 import request from "@/utils/request";
 
 export default {
@@ -618,6 +620,11 @@ export default {
       // 将订单商品加入购物车
       uni.showToast({ title: "已加入购物车", icon: "success" });
     };
+
+    // T304: 添加登录守卫
+    onShow(() => {
+      requireAuth();
+    });
 
     onMounted(() => {
       fetchOrderDetail();

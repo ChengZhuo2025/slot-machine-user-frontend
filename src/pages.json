@@ -33,21 +33,24 @@
       "path": "pages/hotel/book-confirm",
       "style": {
         "navigationBarTitleText": "确认订单",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "needsAuth": true
       }
     },
     {
       "path": "pages/hotel/order-detail",
       "style": {
         "navigationBarTitleText": "订单详情",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "needsAuth": true
       }
     },
     {
       "path": "pages/hotel/unlock",
       "style": {
         "navigationBarTitleText": "开锁",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "needsAuth": true
       }
     },
     {
@@ -68,21 +71,24 @@
       "path": "pages/mall/cart",
       "style": {
         "navigationBarTitleText": "购物车",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "needsAuth": true
       }
     },
     {
       "path": "pages/mall/order-confirm",
       "style": {
         "navigationBarTitleText": "确认订单",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "needsAuth": true
       }
     },
     {
       "path": "pages/mall/order-detail",
       "style": {
         "navigationBarTitleText": "订单详情",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "needsAuth": true
       }
     },
     {
@@ -103,28 +109,32 @@
       "path": "pages/mall/coupons",
       "style": {
         "navigationBarTitleText": "我的优惠券",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "needsAuth": true
       }
     },
     {
       "path": "pages/scan/index",
       "style": {
         "navigationBarTitleText": "扫一扫",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "needsAuth": true
       }
     },
     {
       "path": "pages/distribution/index",
       "style": {
         "navigationBarTitleText": "赚钱",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "needsAuth": true
       }
     },
     {
       "path": "pages/user/index",
       "style": {
         "navigationBarTitleText": "我的",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "needsAuth": true
       }
     },
     {

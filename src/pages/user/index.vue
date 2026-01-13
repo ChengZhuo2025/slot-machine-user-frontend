@@ -297,8 +297,10 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import CustomTabBar from '@/components/layout/CustomTabBar.vue'
+import { requireAuth } from '@/utils/authGuard'
 import Icon from '@/components/common/Icon.vue'
 import Modal from '@/components/common/Modal.vue'
 import EditProfile from '@/components/user/EditProfile.vue'
@@ -572,6 +574,11 @@ export default {
       couponStatus.monthlyCard = true
       uni.showToast({ title: '包月卡开通成功', icon: 'success' })
     }
+
+    // T300: 添加登录守卫
+    onShow(() => {
+      requireAuth()
+    })
 
     onMounted(() => {
       console.log('个人中心页面加载完成')

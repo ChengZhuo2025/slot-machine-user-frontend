@@ -96,8 +96,10 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useRouter } from 'vue-router'
 import Icon from '@/components/common/Icon.vue'
+import { requireAuth } from '@/utils/authGuard'
 import request from '@/utils/request'
 
 export default {
@@ -228,6 +230,11 @@ export default {
     const handleGoToMall = () => {
       uni.switchTab({ url: '/pages/mall/index' })
     }
+
+    // T305: 添加登录守卫
+    onShow(() => {
+      requireAuth()
+    })
 
     onMounted(() => {
       fetchCoupons()

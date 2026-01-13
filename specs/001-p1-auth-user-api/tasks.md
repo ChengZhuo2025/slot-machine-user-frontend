@@ -17,9 +17,9 @@
 
 **目标**: 配置项目环境变量，支持多环境部署
 
-- [ ] T001 [P1] [SETUP] 在项目根目录创建 `.env.development` 文件，设置 `VITE_API_BASE_URL=http://localhost:8000/api/v1`
-- [ ] T002 [P1] [SETUP] 在项目根目录创建 `.env.production` 文件，设置生产环境 API URL
-- [ ] T003 [P1] [SETUP] 更新 `vite.config.js`，确保已配置加载环境变量
+- [x] T001 [P1] [SETUP] 在项目根目录创建 `.env.development` 文件，设置 `VITE_API_BASE_URL=http://localhost:8000/api/v1`
+- [x] T002 [P1] [SETUP] 在项目根目录创建 `.env.production` 文件，设置生产环境 API URL
+- [x] T003 [P1] [SETUP] 更新 `vite.config.js`，确保已配置加载环境变量
 
 **检查点**: 环境变量配置完成，可以开始基础设施开发
 
@@ -31,51 +31,51 @@
 
 ### Token 刷新与请求层
 
-- [ ] T010 [P1] [FOUND] 更新 `src/services/request.js` - 修改 `baseURL` 使用 `import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'` - **阻塞 US1-US6**
-- [ ] T011 [P1] [FOUND] 更新 `src/services/request.js` - 添加 token 刷新队列机制：声明 `let isRefreshing = false` 标志和 `let failedQueue = []` 数组，确保刷新期间的并发请求进入队列等待而非重复触发刷新（对应 FR-005a） - **阻塞 US3**
-- [ ] T012 [P1] [FOUND] 更新 `src/services/request.js` - 实现 `processQueue(error, token)` 函数：遍历 `failedQueue` 中的 Promise，刷新成功时用新 token resolve 让请求重试，刷新失败时 reject 所有等待请求 - **阻塞 US3**
-- [ ] T013 [P1] [FOUND] 更新 `src/services/request.js` - 在 `requestInterceptor` 中添加预检查：token 剩余时间 <5 分钟时触发刷新（基于本地 `Date.now()` 与 `tokenExpireTime` 比较） - **阻塞 US3**
-- [ ] T014 [P1] [FOUND] 更新 `src/services/request.js` - 添加队列机制：如果 `isRefreshing` 为 true，返回加入 `failedQueue` 的 Promise - **阻塞 US3**
-- [ ] T015 [P1] [FOUND] 更新 `src/services/request.js` - 更新 `responseInterceptor` 处理 401：清除 tokens，跳转到 `/pages/user/login` - **阻塞 US1-US6**
-- [ ] T016 [P1] [FOUND] 更新 `src/services/request.js` - 更新响应处理，同时接受 `code: 0` 和 `code: 200` 作为成功状态 - **阻塞 US1-US6**
-- [ ] T017 [P1] [FOUND] 更新 `src/services/request.js` - 配置默认超时时间为 10 秒 - **阻塞 US1-US6**
-- [ ] T018 [P1] [FOUND] 更新 `src/App.vue` - 在 `onLaunch` 中仅检查本地 token 有效期（`tokenExpireTime`），不主动调用刷新 API；token 刷新延迟到首次受保护请求时触发（懒加载策略，对应 FR-007a） - **阻塞 US3**
+- [x] T010 [P1] [FOUND] 更新 `src/services/request.js` - 修改 `baseURL` 使用 `import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'` - **阻塞 US1-US6**
+- [x] T011 [P1] [FOUND] 更新 `src/services/request.js` - 添加 token 刷新队列机制：声明 `let isRefreshing = false` 标志和 `let failedQueue = []` 数组，确保刷新期间的并发请求进入队列等待而非重复触发刷新（对应 FR-005a） - **阻塞 US3**
+- [x] T012 [P1] [FOUND] 更新 `src/services/request.js` - 实现 `processQueue(error, token)` 函数：遍历 `failedQueue` 中的 Promise，刷新成功时用新 token resolve 让请求重试，刷新失败时 reject 所有等待请求 - **阻塞 US3**
+- [x] T013 [P1] [FOUND] 更新 `src/services/request.js` - 在 `requestInterceptor` 中添加预检查：token 剩余时间 <5 分钟时触发刷新（基于本地 `Date.now()` 与 `tokenExpireTime` 比较） - **阻塞 US3**
+- [x] T014 [P1] [FOUND] 更新 `src/services/request.js` - 添加队列机制：如果 `isRefreshing` 为 true，返回加入 `failedQueue` 的 Promise - **阻塞 US3**
+- [x] T015 [P1] [FOUND] 更新 `src/services/request.js` - 更新 `responseInterceptor` 处理 401：清除 tokens，跳转到 `/pages/user/login` - **阻塞 US1-US6**
+- [x] T016 [P1] [FOUND] 更新 `src/services/request.js` - 更新响应处理，同时接受 `code: 0` 和 `code: 200` 作为成功状态 - **阻塞 US1-US6**
+- [x] T017 [P1] [FOUND] 更新 `src/services/request.js` - 配置默认超时时间为 10 秒 - **阻塞 US1-US6**
+- [x] T018 [P1] [FOUND] 更新 `src/App.vue` - 在 `onLaunch` 中仅检查本地 token 有效期（`tokenExpireTime`），不主动调用刷新 API；token 刷新延迟到首次受保护请求时触发（懒加载策略，对应 FR-007a） - **阻塞 US3**
 
 ### 认证服务（新文件）
 
-- [ ] T020 [P1] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `sendSmsCode(phone)` 函数，调用 `POST /auth/sms/send`，参数 `{ phone, code_type: 'login' }` - **阻塞 US1**
-- [ ] T021 [P1] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `smsLogin(phone, code, inviteCode)` 函数，调用 `POST /auth/login/sms` - **阻塞 US1**
-- [ ] T022 [P1] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `wechatLogin(code)` 函数，调用 `POST /auth/login/wechat` - **阻塞 US2**
-- [ ] T023 [P1] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `refreshToken(refreshToken)` 函数，调用 `POST /auth/refresh` - **阻塞 US3**
-- [ ] T024 [P1] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `logout()` 函数，调用 `POST /auth/logout` - **阻塞 US3**
-- [ ] T025 [P2] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `bindPhone(phone, code)` 函数，调用 `POST /auth/bind-phone`
-- [ ] T026 [P2] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `getCurrentUser()` 函数，调用 `GET /auth/me`
+- [x] T020 [P1] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `sendSmsCode(phone)` 函数，调用 `POST /auth/sms/send`，参数 `{ phone, code_type: 'login' }` - **阻塞 US1**
+- [x] T021 [P1] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `smsLogin(phone, code, inviteCode)` 函数，调用 `POST /auth/login/sms` - **阻塞 US1**
+- [x] T022 [P1] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `wechatLogin(code)` 函数，调用 `POST /auth/login/wechat` - **阻塞 US2**
+- [x] T023 [P1] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `refreshToken(refreshToken)` 函数，调用 `POST /auth/refresh` - **阻塞 US3**
+- [x] T024 [P1] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `logout()` 函数，调用 `POST /auth/logout` - **阻塞 US3**
+- [x] T025 [P2] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `bindPhone(phone, code)` 函数，调用 `POST /auth/bind-phone`
+- [x] T026 [P2] [P] [FOUND] 创建 `src/services/auth.js` - 导出 `getCurrentUser()` 函数，调用 `GET /auth/me`
 
 ### 用户服务更新
 
-- [ ] T030 [P2] [P] [FOUND] 更新 `src/services/user.js` - 修改 `getProfile()` 调用 `GET /user/profile` - **阻塞 US4**
-- [ ] T031 [P2] [P] [FOUND] 更新 `src/services/user.js` - 修改 `updateProfile(data)` 调用 `PUT /user/profile` - **阻塞 US4**
-- [ ] T032 [P3] [P] [FOUND] 更新 `src/services/user.js` - 添加 `getWallet()` 函数，调用 `GET /user/wallet` - **阻塞 US5**
-- [ ] T033 [P3] [P] [FOUND] 更新 `src/services/user.js` - 添加 `getTransactions(params)` 函数，调用 `GET /user/wallet/transactions`，支持分页（默认 pageSize=20） - **阻塞 US5**
-- [ ] T034 [P3] [P] [FOUND] 更新 `src/services/user.js` - 添加 `getMemberLevels()` 函数，调用 `GET /user/member-levels`
-- [ ] T035 [P2] [P] [FOUND] 更新 `src/services/user.js` - 添加 `realNameVerify(realName, idCard)` 函数，调用 `POST /user/real-name-verify`
+- [x] T030 [P2] [P] [FOUND] 更新 `src/services/user.js` - 修改 `getProfile()` 调用 `GET /user/profile` - **阻塞 US4**
+- [x] T031 [P2] [P] [FOUND] 更新 `src/services/user.js` - 修改 `updateProfile(data)` 调用 `PUT /user/profile` - **阻塞 US4**
+- [x] T032 [P3] [P] [FOUND] 更新 `src/services/user.js` - 添加 `getWallet()` 函数，调用 `GET /user/wallet` - **阻塞 US5**
+- [x] T033 [P3] [P] [FOUND] 更新 `src/services/user.js` - 添加 `getTransactions(params)` 函数，调用 `GET /user/wallet/transactions`，支持分页（默认 pageSize=20） - **阻塞 US5**
+- [x] T034 [P3] [P] [FOUND] 更新 `src/services/user.js` - 添加 `getMemberLevels()` 函数，调用 `GET /user/member-levels`
+- [x] T035 [P2] [P] [FOUND] 更新 `src/services/user.js` - 添加 `realNameVerify(realName, idCard)` 函数，调用 `POST /user/real-name-verify`
 
 ### Store 更新
 
-- [ ] T040 [P1] [FOUND] 更新 `src/stores/user.js` - 添加新的状态字段：`accessToken`、`refreshToken`、`tokenExpireTime` - **阻塞 US1-US6**
-- [ ] T041 [P1] [FOUND] 更新 `src/stores/user.js` - 更新 `login(loginData)` action，处理新的响应格式，包含 `response.user` 和 `response.token`，以及 `is_new_user` 标志 - **阻塞 US1**
-- [ ] T042 [P1] [FOUND] 更新 `src/stores/user.js` - 存储 `tokenExpireTime` 为 `response.token.expires_at * 1000`（后端返回 Unix 时间戳，需转为毫秒） - **阻塞 US3**
-- [ ] T043 [P1] [FOUND] 更新 `src/stores/user.js` - 添加 `refreshTokens(newTokenData)` action，用于刷新后更新 tokens - **阻塞 US3**
-- [ ] T044 [P1] [FOUND] 更新 `src/stores/user.js` - 更新 `logout()` action，清除所有 token 相关状态并调用登出 API - **阻塞 US3**
-- [ ] T045 [P1] [FOUND] 更新 `src/stores/user.js` - 更新持久化配置，包含新的 token 字段（使用 uni.setStorageSync） - **阻塞 US1-US6**
+- [x] T040 [P1] [FOUND] 更新 `src/stores/user.js` - 添加新的状态字段：`accessToken`、`refreshToken`、`tokenExpireTime` - **阻塞 US1-US6**
+- [x] T041 [P1] [FOUND] 更新 `src/stores/user.js` - 更新 `login(loginData)` action，处理新的响应格式，包含 `response.user` 和 `response.token`，以及 `is_new_user` 标志 - **阻塞 US1**
+- [x] T042 [P1] [FOUND] 更新 `src/stores/user.js` - 存储 `tokenExpireTime` 为 `response.token.expires_at * 1000`（后端返回 Unix 时间戳，需转为毫秒） - **阻塞 US3**
+- [x] T043 [P1] [FOUND] 更新 `src/stores/user.js` - 添加 `refreshTokens(newTokenData)` action，用于刷新后更新 tokens - **阻塞 US3**
+- [x] T044 [P1] [FOUND] 更新 `src/stores/user.js` - 更新 `logout()` action，清除所有 token 相关状态并调用登出 API - **阻塞 US3**
+- [x] T045 [P1] [FOUND] 更新 `src/stores/user.js` - 更新持久化配置，包含新的 token 字段（使用 uni.setStorageSync） - **阻塞 US1-US6**
 
 ### 登录守卫工具（新文件）
 
-- [ ] T050 [P1] [P] [FOUND] 创建 `src/utils/authGuard.js` - 定义需要登录保护的页面路径列表常量（10 个页面） - **阻塞 US6**
-- [ ] T051 [P1] [P] [FOUND] 创建 `src/utils/authGuard.js` - 导出 `checkAuth()` 函数，检查 userStore.isLogin 状态 - **阻塞 US6**
-- [ ] T052 [P1] [P] [FOUND] 创建 `src/utils/authGuard.js` - 导出 `requireAuth(targetPath)` 函数，未登录时保存目标路径并跳转登录页 - **阻塞 US6**
-- [ ] T053 [P1] [P] [FOUND] 创建 `src/utils/authGuard.js` - 导出 `getRedirectPath()` 函数，获取登录成功后的跳转路径 - **阻塞 US6**
-- [ ] T054 [P1] [P] [FOUND] 创建 `src/utils/authGuard.js` - 导出 `clearRedirectPath()` 函数，清除保存的跳转路径 - **阻塞 US6**
+- [x] T050 [P1] [P] [FOUND] 创建 `src/utils/authGuard.js` - 定义需要登录保护的页面路径列表常量（10 个页面） - **阻塞 US6**
+- [x] T051 [P1] [P] [FOUND] 创建 `src/utils/authGuard.js` - 导出 `checkAuth()` 函数，检查 userStore.isLogin 状态 - **阻塞 US6**
+- [x] T052 [P1] [P] [FOUND] 创建 `src/utils/authGuard.js` - 导出 `requireAuth(targetPath)` 函数，未登录时保存目标路径并跳转登录页 - **阻塞 US6**
+- [x] T053 [P1] [P] [FOUND] 创建 `src/utils/authGuard.js` - 导出 `getRedirectPath()` 函数，获取登录成功后的跳转路径 - **阻塞 US6**
+- [x] T054 [P1] [P] [FOUND] 创建 `src/utils/authGuard.js` - 导出 `clearRedirectPath()` 函数，清除保存的跳转路径 - **阻塞 US6**
 
 **检查点**: 基础设施完成，可以开始用户故事实现
 
@@ -91,13 +91,13 @@
 
 ### 登录页面更新
 
-- [ ] T100 [P1] [US1] 更新 `src/pages/user/login.vue` - 导入 auth 服务，用 `authApi.sendSmsCode(phone)` 替换 mock 登录调用
-- [ ] T101 [P1] [US1] 更新 `src/pages/user/login.vue` - 实现发送短信验证码后的 60 秒倒计时（前端防刷）
-- [ ] T102 [P1] [US1] 更新 `src/pages/user/login.vue` - 更新提交处理器，调用 `authApi.smsLogin(phone, code, inviteCode)`
-- [ ] T103 [P1] [US1] 更新 `src/pages/user/login.vue` - 解析登录响应：提取 `user` 和 `token` 对象，保存到 store
-- [ ] T104 [P1] [US1] 更新 `src/pages/user/login.vue` - 处理 `is_new_user` 标志：为首次登录用户显示"欢迎新用户"提示
-- [ ] T105 [P1] [US1] 更新 `src/pages/user/login.vue` - 添加错误处理：显示 `response.message` 中的失败信息（如"验证码错误"）
-- [ ] T106 [P1] [US1] 更新 `src/pages/user/login.vue` - 处理频率限制错误 (429)：显示"发送过于频繁，请稍后再试"
+- [x] T100 [P1] [US1] 更新 `src/pages/user/login.vue` - 导入 auth 服务，用 `authApi.sendSmsCode(phone)` 替换 mock 登录调用
+- [x] T101 [P1] [US1] 更新 `src/pages/user/login.vue` - 实现发送短信验证码后的 60 秒倒计时（前端防刷）
+- [x] T102 [P1] [US1] 更新 `src/pages/user/login.vue` - 更新提交处理器，调用 `authApi.smsLogin(phone, code, inviteCode)`
+- [x] T103 [P1] [US1] 更新 `src/pages/user/login.vue` - 解析登录响应：提取 `user` 和 `token` 对象，保存到 store
+- [x] T104 [P1] [US1] 更新 `src/pages/user/login.vue` - 处理 `is_new_user` 标志：为首次登录用户显示"欢迎新用户"提示
+- [x] T105 [P1] [US1] 更新 `src/pages/user/login.vue` - 添加错误处理：显示 `response.message` 中的失败信息（如"验证码错误"）
+- [x] T106 [P1] [US1] 更新 `src/pages/user/login.vue` - 处理频率限制错误 (429)：显示"发送过于频繁，请稍后再试"
 
 ### 验证测试
 
@@ -121,12 +121,12 @@
 
 ### 微信登录实现
 
-- [ ] T200 [P1] [US2] 更新 `src/pages/user/login.vue` - 使用 `uni.getSystemInfoSync().platform` 添加平台检测
-- [ ] T201 [P1] [US2] 更新 `src/pages/user/login.vue` - 仅在小程序环境中显示微信登录按钮（`#ifdef MP-WEIXIN`）
-- [ ] T202 [P1] [US2] 更新 `src/pages/user/login.vue` - 实现 `handleWechatLogin()`：调用 `uni.login()` 获取 code
-- [ ] T203 [P1] [US2] 更新 `src/pages/user/login.vue` - 使用 wx.login 返回的 code 调用 `authApi.wechatLogin(code)`
-- [ ] T204 [P1] [US2] 更新 `src/pages/user/login.vue` - 处理微信授权拒绝：显示"需要微信授权才能登录"
-- [ ] T205 [P1] [US2] 更新 `src/pages/user/login.vue` - 解析微信登录响应（格式与短信登录相同）
+- [x] T200 [P1] [US2] 更新 `src/pages/user/login.vue` - 使用 `uni.getSystemInfoSync().platform` 添加平台检测
+- [x] T201 [P1] [US2] 更新 `src/pages/user/login.vue` - 仅在小程序环境中显示微信登录按钮（`#ifdef MP-WEIXIN`）
+- [x] T202 [P1] [US2] 更新 `src/pages/user/login.vue` - 实现 `handleWechatLogin()`：调用 `uni.login()` 获取 code
+- [x] T203 [P1] [US2] 更新 `src/pages/user/login.vue` - 使用 wx.login 返回的 code 调用 `authApi.wechatLogin(code)`
+- [x] T204 [P1] [US2] 更新 `src/pages/user/login.vue` - 处理微信授权拒绝：显示"需要微信授权才能登录"
+- [x] T205 [P1] [US2] 更新 `src/pages/user/login.vue` - 解析微信登录响应（格式与短信登录相同）
 
 ### 验证测试
 
@@ -148,26 +148,26 @@
 
 ### 页面守卫集成（10 个受保护页面）
 
-- [ ] T300 [P1] [P] [US6] 更新 `src/pages/user/index.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
-- [ ] T301 [P1] [P] [US6] 更新 `src/pages/distribution/index.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
-- [ ] T302 [P1] [P] [US6] 更新 `src/pages/mall/cart.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
-- [ ] T303 [P1] [P] [US6] 更新 `src/pages/mall/order-confirm.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
-- [ ] T304 [P1] [P] [US6] 更新 `src/pages/mall/order-detail.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
-- [ ] T305 [P1] [P] [US6] 更新 `src/pages/mall/coupons.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
-- [ ] T306 [P1] [P] [US6] 更新 `src/pages/hotel/book-confirm.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
-- [ ] T307 [P1] [P] [US6] 更新 `src/pages/hotel/order-detail.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
-- [ ] T308 [P1] [P] [US6] 更新 `src/pages/hotel/unlock.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
-- [ ] T309 [P1] [P] [US6] 更新 `src/pages/scan/index.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
+- [x] T300 [P1] [P] [US6] 更新 `src/pages/user/index.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
+- [x] T301 [P1] [P] [US6] 更新 `src/pages/distribution/index.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
+- [x] T302 [P1] [P] [US6] 更新 `src/pages/mall/cart.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
+- [x] T303 [P1] [P] [US6] 更新 `src/pages/mall/order-confirm.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
+- [x] T304 [P1] [P] [US6] 更新 `src/pages/mall/order-detail.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
+- [x] T305 [P1] [P] [US6] 更新 `src/pages/mall/coupons.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
+- [x] T306 [P1] [P] [US6] 更新 `src/pages/hotel/book-confirm.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
+- [x] T307 [P1] [P] [US6] 更新 `src/pages/hotel/order-detail.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
+- [x] T308 [P1] [P] [US6] 更新 `src/pages/hotel/unlock.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
+- [x] T309 [P1] [P] [US6] 更新 `src/pages/scan/index.vue` - 在 `onShow` 生命周期中调用 `requireAuth()` 检查登录状态
 
 ### pages.json 配置（FR-021）
 
-- [ ] T310 [P1] [US6] 更新 `src/pages.json` - 为需要登录保护的页面添加 `needsAuth: true` 元数据标记
+- [x] T310 [P1] [US6] 更新 `src/pages.json` - 为需要登录保护的页面添加 `needsAuth: true` 元数据标记
 
 ### 登录成功跳转
 
-- [ ] T320 [P1] [US6] 更新 `src/pages/user/login.vue` - 登录成功后调用 `getRedirectPath()` 获取目标页面
-- [ ] T321 [P1] [US6] 更新 `src/pages/user/login.vue` - 如果有保存的目标页面，跳转到该页面，否则跳转首页
-- [ ] T322 [P1] [US6] 更新 `src/pages/user/login.vue` - 跳转后调用 `clearRedirectPath()` 清除保存的路径
+- [x] T320 [P1] [US6] 更新 `src/pages/user/login.vue` - 登录成功后调用 `getRedirectPath()` 获取目标页面
+- [x] T321 [P1] [US6] 更新 `src/pages/user/login.vue` - 如果有保存的目标页面，跳转到该页面，否则跳转首页
+- [x] T322 [P1] [US6] 更新 `src/pages/user/login.vue` - 跳转后调用 `clearRedirectPath()` 清除保存的路径
 
 ### 验证测试
 

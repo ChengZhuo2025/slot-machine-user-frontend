@@ -405,8 +405,10 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from "vue";
+import { onShow } from "@dcloudio/uni-app";
 import CustomTabBar from "@/components/layout/CustomTabBar.vue";
 import Icon from "@/components/common/Icon.vue";
+import { requireAuth } from "@/utils/authGuard";
 
 export default {
   name: "DistributionIndexPage",
@@ -918,6 +920,11 @@ export default {
         handler: () => contactManager(),
       },
     ]);
+
+    // T301: 添加登录守卫
+    onShow(() => {
+      requireAuth();
+    });
 
     // 生命周期
     onMounted(() => {
