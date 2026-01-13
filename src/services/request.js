@@ -1,5 +1,5 @@
 // 网络请求封装
-const baseURL = 'http://localhost:3000/api'
+const baseURL = 'http://localhost:8000/api'
 
 // 请求拦截器
 const requestInterceptor = (config) => {
