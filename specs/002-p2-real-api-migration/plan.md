@@ -15,8 +15,8 @@
 **Testing**: 手动测试 + UniApp开发者工具
 **Target Platform**: H5、微信小程序、Android/iOS App (UniApp跨平台)
 **Project Type**: Mobile (UniApp单项目结构)
-**Performance Goals**: 首页2秒内加载完成，分页1秒内响应，搜索防抖300-500ms
-**Constraints**: 短期内存缓存5-10分钟，图片懒加载+渐进式加载，API错误率<1%
+**Performance Goals**: 首页2秒内加载完成，分页1秒内响应，搜索防抖400ms
+**Constraints**: 短期内存缓存10分钟，图片懒加载+渐进式加载，API错误率<1%
 **Scale/Scope**: 首页6个数据模块，商城约20个商品分类，酒店/商品列表支持分页
 
 ## Constitution Check
@@ -124,9 +124,15 @@ src/
 │   ├── index/
 │   │   └── index.vue    # 需更新 - 首页（移除mock数据）
 │   ├── hotel/
-│   │   └── index.vue    # 需更新 - 酒店列表页
-│   └── mall/
-│       └── index.vue    # 需更新 - 商城页（移除mock数据）
+│   │   ├── list.vue     # 需更新 - 酒店列表页
+│   │   ├── detail.vue   # 需更新 - 酒店详情页
+│   │   └── room-detail.vue # 需更新 - 房型详情页
+│   ├── mall/
+│   │   └── index.vue    # 需更新 - 商城页（移除mock数据）
+│   ├── coupon/
+│   │   └── index.vue    # 需新建 - 优惠券列表页
+│   └── user/
+│       └── coupons.vue  # 需新建 - 我的优惠券页
 │
 ├── components/
 │   ├── common/
