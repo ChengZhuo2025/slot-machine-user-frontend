@@ -2,7 +2,7 @@
  * 用户服务 API
  * T030-T035: 用户相关接口封装
  */
-import { get, post, put } from './request'
+import { get, post, put, uploadFile } from './request'
 
 /**
  * T030: 获取用户详情
@@ -78,103 +78,55 @@ export const getPoints = () => {
   return get('/user/points')
 }
 
-// CHK005: 头像上传配置
-const AVATAR_CONFIG = {
-  maxSize: 2 * 1024 * 1024,  // 最大 2MB
-  allowedTypes: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-  maxSizeText: '2MB'
-}
-
 /**
- * CHK005: 验证头像文件
- * @param {string} filePath - 文件路径
- * @returns {Promise<{valid: boolean, error?: string}>}
- */
-const validateAvatarFile = (filePath) => {
-  return new Promise((resolve) => {
-    // 检查文件扩展名
-    const ext = filePath.split('.').pop()?.toLowerCase()
-    if (!AVATAR_CONFIG.allowedTypes.includes(ext)) {
-      resolve({
-        valid: false,
-        error: `仅支持 ${AVATAR_CONFIG.allowedTypes.join('/')} 格式`
-      })
-      return
-    }
-
-    // 获取文件信息检查大小
-    uni.getFileInfo({
-      filePath,
-      success: (res) => {
-        if (res.size > AVATAR_CONFIG.maxSize) {
-          resolve({
-            valid: false,
-            error: `图片大小不能超过 ${AVATAR_CONFIG.maxSizeText}`
-          })
-        } else {
-          resolve({ valid: true })
-        }
-      },
-      fail: () => {
-        // 无法获取文件信息，允许上传让服务器验证
-        resolve({ valid: true })
-      }
-    })
-  })
-}
-
-/**
- * 上传头像
+ * 上传头像到服务器
+ *
+ * 后端会自动更新用户的 avatar 字段
+ *
  * @param {string} filePath - 本地文件路径
- * @returns {Promise<{url: string}>}
+ * @returns {Promise<{url: string, file_name: string, size: number}>} 上传结果，包含头像URL、文件名和大小
  */
 export const uploadAvatar = async (filePath) => {
-  // CHK005: 先验证文件
-  const validation = await validateAvatarFile(filePath)
-  if (!validation.valid) {
-    uni.showToast({
-      title: validation.error,
-      icon: 'none'
-    })
-    throw new Error(validation.error)
-  }
+  return uploadFile('/user/avatar', filePath, 'file')
+}
 
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
-  return new Promise((resolve, reject) => {
-    uni.uploadFile({
-      url: `${baseURL}/user/avatar`,
-      filePath,
-      name: 'avatar',
-      header: {
-        'Authorization': `Bearer ${uni.getStorageSync('token')}`
-      },
-      success: (response) => {
-        const data = JSON.parse(response.data)
-        if (data.code === 0 || data.code === 200) {
-          resolve(data.data)
-        } else {
-          uni.showToast({
-            title: data.message || '上传失败',
-            icon: 'none'
-          })
-          reject(new Error(data.message || '上传失败'))
-        }
-      },
-      fail: (error) => {
-        uni.showToast({
-          title: '上传失败',
-          icon: 'none'
-        })
-        reject(error)
-      }
-    })
-  })
+/**
+ * 上传通用图片
+ *
+ * @param {string} filePath - 本地文件路径
+ * @param {string} fileType - 文件类型标识（如 'avatar', 'hotel', 'room', 'product' 等）
+ * @returns {Promise<{url: string, file_name: string, size: number}>} 上传结果，包含图片URL、文件名和大小
+ */
+export const uploadImage = async (filePath, fileType = 'images') => {
+  return uploadFile('/upload/image', filePath, 'file', { file_type: fileType })
+}
+
+/**
+ * @deprecated 请使用 uploadAvatar(filePath) 方法直接上传头像文件
+ *
+ * 更新头像 URL（已废弃）
+ *
+ * 推荐使用 uploadAvatar() 方法直接上传头像文件，后端会自动更新用户信息
+ * 如需手动设置头像 URL，请使用 updateProfile({ avatar: url })
+ *
+ * @param {string} avatarUrl - 头像 URL
+ * @returns {Promise<null>}
+ */
+export const updateAvatar = (avatarUrl) => {
+  return updateProfile({ avatar: avatarUrl })
+}
+
+/**
+ * 获取会员信息
+ * @returns {Promise<object>} 会员信息
+ */
+export const getMemberInfo = () => {
+  return get('/member/info')
 }
 
 // 兼容旧 API（将逐步废弃）
 export const getUserInfo = getProfile
 export const updateUserInfo = updateProfile
-export const getMemberInfo = () => get('/user/member')
 
 export default {
   getProfile,
@@ -185,6 +137,8 @@ export default {
   realNameVerify,
   getPoints,
   uploadAvatar,
+  uploadImage,
+  updateAvatar, // @deprecated 使用 uploadAvatar 替代
   // 兼容旧 API
   getUserInfo,
   updateUserInfo,

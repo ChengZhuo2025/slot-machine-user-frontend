@@ -1,0 +1,90 @@
+openapi: 3.0.3
+info:
+  title: Banner API
+  description: 首页轮播广告API接口
+  version: 1.0.0
+
+paths:
+  /banners:
+    get:
+      summary: 获取轮播广告列表
+      description: 获取首页展示的轮播广告列表
+      operationId: getBanners
+      tags:
+        - Banner
+      parameters:
+        - name: position
+          in: query
+          description: 广告位置（必需）
+          required: true
+          schema:
+            type: string
+            enum: [home, mall, hotel]
+        - name: limit
+          in: query
+          description: 返回数量限制
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 10
+      responses:
+        '200':
+          description: 成功获取Banner列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Banner'
+        '401':
+          description: 未授权
+        '500':
+          description: 服务器错误
+
+components:
+  schemas:
+    Banner:
+      type: object
+      required:
+        - id
+        - image
+        - position
+      properties:
+        id:
+          type: integer
+          description: Banner ID
+          example: 1
+        title:
+          type: string
+          description: 标题
+          maxLength: 100
+          example: 限时特惠
+        image:
+          type: string
+          format: uri
+          description: 图片URL
+          example: https://cdn.example.com/banner01.jpg
+        link_type:
+          type: string
+          description: 链接类型 (如: page, url, product)
+          example: page
+        link_value:
+          type: string
+          description: 链接值
+          example: /pages/mall/category?id=hot
+        position:
+          type: string
+          description: 广告位置
+          enum: [home, mall, hotel]
+          example: home

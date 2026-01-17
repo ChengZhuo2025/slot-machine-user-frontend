@@ -2,29 +2,40 @@
 ================================================================================
 SYNC IMPACT REPORT
 ================================================================================
-Version Change: 0.0.0 → 1.0.0 (MAJOR - Initial constitution creation)
+Version Change: 1.0.0 → 1.1.0 (MINOR - Added missing API modules)
 
-Modified Principles: N/A (initial creation)
+Modified Principles: None
 
-Added Sections:
-- Core Principles (5 principles)
-  - I. API-First Integration
-  - II. Type Safety & Contract Compliance
-  - III. Error Handling & User Experience
-  - IV. Environment-Aware Configuration
-  - V. Incremental Migration
+Modified Sections:
 - Technical Standards
-- Development Workflow
+  - Updated "API Modules to Integrate" table
+  - Added 5 missing modules: Payment, Device & Venue, Rental, Address, Content
+  - Adjusted module priorities based on backend API analysis
+- Core Principles > V. Incremental Migration
+  - Updated module list to include all backend modules
 
-Removed Sections: N/A (initial creation)
+Added Sections: None
+
+Removed Sections: None
+
+Rationale:
+- Backend code review revealed 5 implemented API modules not listed in constitution
+- Device/Venue and Rental are core business functions and should be P2 priority
+- Payment is a critical cross-cutting concern needed by multiple modules
+- Address management is required for mall functionality
+- Content APIs (banners, articles, feedback) support user experience features
 
 Templates Requiring Updates:
-- .specify/templates/plan-template.md ✅ No updates needed (generic template)
-- .specify/templates/spec-template.md ✅ No updates needed (generic template)
-- .specify/templates/tasks-template.md ✅ No updates needed (generic template)
-- .specify/templates/checklist-template.md ✅ No updates needed (generic template)
+- .specify/templates/plan-template.md ✅ No updates needed
+- .specify/templates/spec-template.md ✅ No updates needed
+- .specify/templates/tasks-template.md ✅ No updates needed
+- .specify/templates/checklist-template.md ✅ No updates needed
 
-Follow-up TODOs: None
+Follow-up TODOs:
+- Create P2 specs for Device & Venue module
+- Create P2 specs for Rental module
+- Create P2 specs for Payment module
+- Fix API path mismatches in existing services (user.js, mall.js, hotel.js)
 ================================================================================
 -->
 
@@ -86,7 +97,7 @@ API configuration MUST support multiple deployment environments.
 Migration from mock to real API MUST be done module by module with verification.
 
 **Non-Negotiable Rules**:
-- Each module (auth, user, hotel, mall, distribution) MUST be migrated and tested independently
+- Each module (auth, user, payment, device, venue, rental, hotel, mall, address, member, marketing, distribution, content) MUST be migrated and tested independently
 - Existing UI behavior MUST be preserved during migration
 - Mock data files MUST NOT be deleted until real API is verified working
 - Each migration MUST be a separate, reviewable unit of work
@@ -112,11 +123,30 @@ Migration from mock to real API MUST be done module by module with verification.
 |-----------------|-------------------|----------|
 | Authentication | `/api/v1/auth/*` | P1 |
 | User Profile | `/api/v1/user/*` | P1 |
+| Payment | `/api/v1/payment/*` | P2 |
+| Device & Venue | `/api/v1/device/*`, `/api/v1/venue/*` | P2 |
+| Rental | `/api/v1/rental/*` | P2 |
 | Hotel & Booking | `/api/v1/hotels/*`, `/api/v1/bookings/*` | P2 |
 | Mall & Orders | `/api/v1/products/*`, `/api/v1/orders/*`, `/api/v1/cart/*` | P2 |
-| Distribution | `/api/v1/distribution/*` | P3 |
-| Marketing | `/api/v1/marketing/*` | P3 |
+| Address | `/api/v1/addresses/*` | P2 |
 | Member | `/api/v1/member/*` | P3 |
+| Marketing | `/api/v1/marketing/*` | P3 |
+| Distribution | `/api/v1/distribution/*` | P3 |
+| Content | `/api/v1/banners`, `/api/v1/articles`, `/api/v1/feedbacks` | P3 |
+
+**Module Descriptions**:
+- **Authentication**: User login (SMS/WeChat), token management, logout
+- **User Profile**: User info, wallet, transactions, member levels, real-name verification, points
+- **Payment**: Unified payment service for all order types, refund management
+- **Device & Venue**: Scan QR code, device details, venue search, nearby venues
+- **Rental**: Device rental flow (create, pay, start, return, cancel)
+- **Hotel & Booking**: Hotel search, room availability, booking management
+- **Mall & Orders**: Product catalog, shopping cart, order lifecycle
+- **Address**: Shipping address management (CRUD operations)
+- **Member**: Membership packages, benefits, upgrade, points exchange
+- **Marketing**: Coupons, campaigns, user coupon management
+- **Distribution**: Distributor application, team management, commission, withdrawal
+- **Content**: Banners, articles, user feedback
 
 ## Development Workflow
 
@@ -152,4 +182,4 @@ This constitution governs all development work on the user frontend API integrat
 - Code reviews MUST verify principle adherence
 - Deviations MUST be documented with justification
 
-**Version**: 1.0.0 | **Ratified**: 2026-01-13 | **Last Amended**: 2026-01-13
+**Version**: 1.1.0 | **Ratified**: 2026-01-13 | **Last Amended**: 2026-01-17

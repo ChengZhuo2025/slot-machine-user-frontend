@@ -303,4 +303,80 @@ export const del = (url, data = {}) => {
   })
 }
 
+// 文件上传方法
+export const uploadFile = async (url, filePath, name = 'file', formData = {}) => {
+  // CHK026: 使用安全存储读取 token
+  let token = getSecure('token')
+
+  // T013: 检查是否需要刷新 token（跳过刷新接口本身）
+  if (!url.includes('/auth/refresh')) {
+    try {
+      const newToken = await checkAndRefreshToken()
+      if (newToken) {
+        token = newToken
+      }
+    } catch (error) {
+      // 刷新失败，继续使用旧 token 或无 token
+      console.error('Token 刷新失败:', error)
+    }
+  }
+
+  // 添加基础URL
+  let fullUrl = url
+  if (!url.startsWith('http')) {
+    fullUrl = baseURL + url
+  }
+
+  return new Promise((resolve, reject) => {
+    uni.uploadFile({
+      url: fullUrl,
+      filePath,
+      name,
+      formData,
+      header: {
+        Authorization: token ? `Bearer ${token}` : ''
+      },
+      timeout: 30000, // 文件上传超时设为30秒
+      success: (response) => {
+        try {
+          const data = JSON.parse(response.data)
+          // 兼容两种响应格式：code === 0 或 code === 200 都表示成功
+          if (data.code === 0 || data.code === 200) {
+            resolve(data.data)
+          } else {
+            uni.showToast({
+              title: data.message || '上传失败',
+              icon: 'none'
+            })
+            reject(new Error(data.message || '上传失败'))
+          }
+        } catch (error) {
+          console.error('解析响应失败:', error)
+          uni.showToast({
+            title: '上传失败',
+            icon: 'none'
+          })
+          reject(new Error('上传失败'))
+        }
+      },
+      fail: (error) => {
+        console.error('上传失败:', error)
+        if (error.errMsg && error.errMsg.includes('timeout')) {
+          uni.showToast({
+            title: '上传超时，请稍后重试',
+            icon: 'none'
+          })
+          reject(new Error('上传超时，请稍后重试'))
+        } else {
+          uni.showToast({
+            title: '上传失败，请检查网络设置',
+            icon: 'none'
+          })
+          reject(new Error('上传失败，请检查网络设置'))
+        }
+      }
+    })
+  })
+}
+
 export default request

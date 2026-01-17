@@ -1,0 +1,445 @@
+openapi: 3.0.3
+info:
+  title: Hotel API
+  description: 酒店和房型相关API接口
+  version: 1.0.0
+
+paths:
+  /hotels:
+    get:
+      summary: 获取酒店列表
+      description: 支持位置筛选、关键词搜索、分页
+      operationId: getHotels
+      tags:
+        - Hotel
+      parameters:
+        - name: keyword
+          in: query
+          description: 搜索关键词
+          required: false
+          schema:
+            type: string
+        - name: longitude
+          in: query
+          description: 经度（附近酒店必需）
+          required: false
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+        - name: latitude
+          in: query
+          description: 纬度（附近酒店必需）
+          required: false
+          schema:
+            type: number
+            minimum: -90
+            maximum: 90
+        - name: radius_km
+          in: query
+          description: 搜索半径(公里)
+          required: false
+          schema:
+            type: number
+            default: 10
+        - name: page
+          in: query
+          description: 页码
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: 成功获取酒店列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotelListResponse'
+
+  /hotels/recommended:
+    get:
+      summary: 获取推荐酒店
+      description: 获取首页推荐酒店列表
+      operationId: getRecommendedHotels
+      tags:
+        - Hotel
+      parameters:
+        - name: limit
+          in: query
+          description: 返回数量限制
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 10
+      responses:
+        '200':
+          description: 成功获取推荐酒店
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Hotel'
+
+  /hotels/{id}:
+    get:
+      summary: 获取酒店详情
+      operationId: getHotelDetail
+      tags:
+        - Hotel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功获取酒店详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/HotelDetail'
+        '404':
+          description: 酒店不存在
+
+  /hotels/{id}/rooms:
+    get:
+      summary: 获取酒店房型列表
+      operationId: getHotelRooms
+      tags:
+        - Room
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功获取房型列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Room'
+
+  /rooms/hot:
+    get:
+      summary: 获取热门房型
+      description: 获取全站热门房型列表（首页展示）
+      operationId: getHotRooms
+      tags:
+        - Room
+      parameters:
+        - name: limit
+          in: query
+          description: 返回数量限制
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 10
+      responses:
+        '200':
+          description: 成功获取热门房型
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HotRoom'
+
+components:
+  schemas:
+    Hotel:
+      type: object
+      required:
+        - id
+        - name
+        - province
+        - city
+        - district
+        - address
+        - images
+        - min_price
+      properties:
+        id:
+          type: integer
+          description: 酒店ID
+        name:
+          type: string
+          description: 酒店名称
+          maxLength: 100
+        star_rating:
+          type: integer
+          description: 星级
+          minimum: 1
+          maximum: 5
+          nullable: true
+        province:
+          type: string
+          description: 省份
+        city:
+          type: string
+          description: 城市
+        district:
+          type: string
+          description: 区域
+        address:
+          type: string
+          description: 详细地址
+        full_address:
+          type: string
+          description: 完整地址（省市区+详细地址）
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: 酒店图片
+        facilities:
+          type: array
+          items:
+            type: string
+          description: 设施列表
+        description:
+          type: string
+          description: 酒店描述
+        check_in_time:
+          type: string
+          description: 入住时间
+        check_out_time:
+          type: string
+          description: 退房时间
+        longitude:
+          type: number
+          description: 经度
+          nullable: true
+        latitude:
+          type: number
+          description: 纬度
+          nullable: true
+        distance:
+          type: number
+          description: 距离（公里）
+        min_price:
+          type: number
+          description: 最低价格
+          minimum: 0
+        room_count:
+          type: integer
+          description: 房间数量
+        recommend_score:
+          type: integer
+          description: 推荐分数
+          minimum: 0
+          maximum: 100
+
+    HotelDetail:
+      allOf:
+        - $ref: '#/components/schemas/Hotel'
+        - type: object
+          properties:
+            phone:
+              type: string
+              description: 联系电话
+            created_at:
+              type: string
+              format: date-time
+              description: 创建时间
+
+    Room:
+      type: object
+      required:
+        - id
+        - room_no
+        - room_type
+        - hotel_id
+        - images
+        - hourly_price
+        - daily_price
+        - max_guests
+        - status
+      properties:
+        id:
+          type: integer
+          description: 房型ID
+        room_no:
+          type: string
+          description: 房间号
+        room_type:
+          type: string
+          description: 房型名称
+        hotel_id:
+          type: integer
+          description: 所属酒店ID
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: 房型图片
+        facilities:
+          type: array
+          items:
+            type: string
+          description: 设施列表
+        area:
+          type: integer
+          description: 房间面积(平米)
+          nullable: true
+        bed_type:
+          type: string
+          description: 床型
+          nullable: true
+        max_guests:
+          type: integer
+          description: 最大入住人数
+          minimum: 1
+        hourly_price:
+          type: number
+          description: 时租价格
+          minimum: 0
+        daily_price:
+          type: number
+          description: 日租价格
+          minimum: 0
+        status:
+          type: integer
+          description: 房间状态 (0=停用, 1=可用, 2=已预订, 3=使用中)
+          enum: [0, 1, 2, 3]
+        status_name:
+          type: string
+          description: 状态名称
+        device_id:
+          type: integer
+          description: 关联设备ID
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+
+    HotRoom:
+      type: object
+      required:
+        - id
+        - hotel_id
+        - room_no
+        - room_type
+        - images
+        - hourly_price
+        - daily_price
+      properties:
+        id:
+          type: integer
+          description: 房型ID
+        hotel_id:
+          type: integer
+          description: 所属酒店ID
+        hotel_name:
+          type: string
+          description: 酒店名称
+        room_no:
+          type: string
+          description: 房间号
+        room_type:
+          type: string
+          description: 房型名称
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: 房型图片
+        hourly_price:
+          type: number
+          description: 时租价格
+          minimum: 0
+        daily_price:
+          type: number
+          description: 日租价格
+          minimum: 0
+        booking_count:
+          type: integer
+          description: 预订次数
+          minimum: 0
+        average_rating:
+          type: number
+          description: 平均评分
+          minimum: 0
+          maximum: 5
+        review_count:
+          type: integer
+          description: 评价数量
+          minimum: 0
+        hot_score:
+          type: number
+          description: 热度分数
+          minimum: 0
+
+    HotelListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Hotel'
+            total:
+              type: integer
+            page:
+              type: integer
+            page_size:
+              type: integer
