@@ -20,10 +20,22 @@
     </view>
 
     <!-- 页面内容 -->
-    <scroll-view class="page-content" scroll-y="true" @scroll="onPageScroll" :show-scrollbar="false">
+    <scroll-view
+      class="page-content"
+      scroll-y="true"
+      @scroll="onPageScroll"
+      :show-scrollbar="false"
+      refresher-enabled
+      :refresher-triggered="isRefreshing"
+      @refresherrefresh="onPullDownRefresh"
+    >
       <!-- Banner轮播图 -->
       <view class="banner-section animate__animated animate__fadeInDown">
+        <!-- 骨架屏 -->
+        <SkeletonScreen v-if="bannerStore.loading.home && !bannerStore.hasHomeBanners" type="banner" />
+        <!-- Banner内容 -->
         <swiper
+          v-else-if="bannerStore.hasHomeBanners"
           class="banner-swiper"
           indicator-dots
           indicator-color="rgba(255,255,255,0.3)"
@@ -33,7 +45,7 @@
           duration="500"
           circular
         >
-          <swiper-item v-for="(banner, index) in banners" :key="index">
+          <swiper-item v-for="banner in bannerStore.homeBanners" :key="banner.id">
             <image
               :src="banner.image"
               class="banner-image"
@@ -42,49 +54,49 @@
             />
           </swiper-item>
         </swiper>
+        <!-- 默认占位 -->
+        <view v-else class="banner-placeholder">
+          <text class="placeholder-text">暂无轮播图</text>
+        </view>
       </view>
 
       <!-- 酒店推荐区 -->
-      <view
-        class="hotel-recommend-section animate__animated animate__fadeInUp"
-        @click="goToHotelDetail(recommendHotels[0])"
-      >
-        <view class="hotel-info">
-          <view class="hotel-name-row">
-            <text class="hotel-name">{{ recommendHotels[0].name }}</text>
-            <view class="hotel-stars">
-              <Icon name="starSolid" size="small" color="#FFD700" />
-              <Icon name="starSolid" size="small" color="#FFD700" />
-              <Icon name="starSolid" size="small" color="#FFD700" />
-              <Icon name="starSolid" size="small" color="#FFD700" />
-              <Icon name="starSolid" size="small" color="#FFD700" />
+      <view class="hotel-recommend-section animate__animated animate__fadeInUp">
+        <!-- 骨架屏 -->
+        <SkeletonScreen v-if="hotelStore.loading.recommended && !hotelStore.hasRecommendedHotels" type="hotel-card" />
+        <!-- 推荐酒店内容 -->
+        <template v-else-if="hotelStore.hasRecommendedHotels">
+          <view @click="goToHotelDetail(hotelStore.recommendedHotels[0])">
+            <view class="hotel-info">
+              <view class="hotel-name-row">
+                <text class="hotel-name">{{ hotelStore.recommendedHotels[0].name }}</text>
+                <view class="hotel-stars">
+                  <Icon v-for="i in (hotelStore.recommendedHotels[0].star_rating || 5)" :key="i" name="starSolid" size="small" color="#FFD700" />
+                </view>
+              </view>
+              <text class="hotel-address">{{ hotelStore.recommendedHotels[0].full_address || hotelStore.recommendedHotels[0].address }}</text>
+            </view>
+            <view class="hotel-meta">
+              <view class="hotel-rating">
+                <Icon name="location" size="small" color="#be32d7" />
+                <text class="hotel-distance">{{ hotelStore.recommendedHotels[0].distance || '0' }}km</text>
+              </view>
+              <view class="hotel-actions">
+                <view class="action-button" @click.stop="navigateToHotel(hotelStore.recommendedHotels[0])">
+                  <Icon name="send" size="small" color="#fff" />
+                  <text class="action-text">导航</text>
+                </view>
+                <view class="action-button" @click.stop="goToHotelDetail(hotelStore.recommendedHotels[0])">
+                  <Icon name="more" size="small" color="#fff" />
+                  <text class="action-text">更多</text>
+                </view>
+              </view>
             </view>
           </view>
-          <text class="hotel-address">{{ recommendHotels[0].address }}</text>
-        </view>
-        <view class="hotel-meta">
-          <view class="hotel-rating">
-            <Icon name="location" size="small" color="#be32d7" />
-            <text class="hotel-distance"
-              >{{ recommendHotels[0].distance }}km</text
-            >
-          </view>
-          <view class="hotel-actions">
-            <view
-              class="action-button"
-              @click.stop="navigateToHotel(recommendHotels[0])"
-            >
-              <Icon name="send" size="small" color="#fff" />
-              <text class="action-text">导航</text>
-            </view>
-            <view
-              class="action-button"
-              @click.stop="goToHotelDetail(recommendHotels[0])"
-            >
-              <Icon name="more" size="small" color="#fff" />
-              <text class="action-text">更多</text>
-            </view>
-          </view>
+        </template>
+        <!-- 空状态 -->
+        <view v-else class="empty-placeholder">
+          <text class="placeholder-text">暂无推荐酒店</text>
         </view>
       </view>
 
@@ -94,34 +106,37 @@
           <Icon name="heart" size="small" color="#fff" />
           <text class="section-title">热门房型 · 一键速订</text>
         </view>
-        <view class="room-list-vertical">
+        <!-- 骨架屏 -->
+        <view v-if="hotelStore.loading.hotRooms && !hotelStore.hasHotRooms" class="room-list-vertical">
+          <SkeletonScreen v-for="i in 3" :key="i" type="hotel-card" />
+        </view>
+        <!-- 房型列表 -->
+        <view v-else-if="hotelStore.hasHotRooms" class="room-list-vertical">
           <view
-            v-for="(room, index) in hotRooms"
+            v-for="room in hotelStore.hotRooms"
             :key="room.id"
             class="room-card animate__animated animate__fadeInUp animate__delay-300ms"
             @click="goToRoomDetail(room)"
           >
             <view class="room-time-badge">
-              <text class="time-text">今天{{ room.availableTime }}</text>
+              <text class="time-text">今天{{ formatAvailableTime(room) }}</text>
             </view>
             <image
-              :src="room.coverImage"
+              :src="getRoomCoverImage(room)"
               class="room-card-image"
               mode="aspectFill"
             />
             <view class="room-card-content">
-              <text class="room-card-name">{{ room.name }}</text>
+              <text class="room-card-name">{{ room.room_type || room.name }}</text>
               <view class="room-tag">
                 <Icon name="bed" size="small" color="#d746f0" />
-                <text class="tag-text">{{ room.capacity || "仅剩2间" }}</text>
+                <text class="tag-text">{{ room.max_guests ? `可住${room.max_guests}人` : '仅剩2间' }}</text>
               </view>
-              <text class="room-card-description"
-                >套餐: {{ room.description }}</text
-              >
+              <text class="room-card-description">套餐: {{ room.bed_type || '大床房' }} · {{ room.area ? `${room.area}㎡` : '舒适空间' }}</text>
               <view class="room-card-footer">
                 <view class="room-price-info">
                   <text class="price-symbol">¥</text>
-                  <text class="price-amount">{{ room.memberPrice }}</text>
+                  <text class="price-amount">{{ room.hourly_price || room.daily_price }}</text>
                 </view>
                 <view class="book-button-new">
                   <text class="book-text-new">立即预订</text>
@@ -130,6 +145,8 @@
             </view>
           </view>
         </view>
+        <!-- 空状态 -->
+        <EmptyState v-else type="hotel" title="暂无热门房型" />
       </view>
 
       <!-- 会员服务区 -->
@@ -172,7 +189,7 @@
       <!-- 附近酒店区域 -->
       <view class="section nearby-hotels-section animate__animated animate__fadeInUp">
         <view class="section-header">
-          <text class="section-title">附近酒店</text>
+          <text class="section-title">{{ locationDenied ? '热门酒店' : '附近酒店' }}</text>
           <view class="section-more" @click="goToHotels">
             <text class="section-more-text">更多</text>
             <Icon name="chevron-right" size="small" color="#fff" />
@@ -191,15 +208,20 @@
             </view>
           </view>
         </view>
-        <view class="hotel-cards">
+        <!-- 骨架屏 -->
+        <view v-if="hotelStore.loading.nearby && !hasNearbyHotels" class="hotel-cards">
+          <SkeletonScreen v-for="i in 4" :key="i" type="product-card" />
+        </view>
+        <!-- 酒店列表 -->
+        <view v-else-if="hasNearbyHotels" class="hotel-cards">
           <view
-            v-for="(hotel, index) in nearbyHotels"
+            v-for="hotel in displayedNearbyHotels"
             :key="hotel.id"
             class="hotel-card animate__animated animate__fadeInRight"
             @click="goToHotelDetail(hotel)"
           >
             <image
-              :src="hotel.coverImage"
+              :src="getHotelCoverImage(hotel)"
               class="hotel-card-image"
               mode="aspectFill"
             />
@@ -208,9 +230,7 @@
               <view class="hotel-card-meta">
                 <view class="hotel-remaining">
                   <Icon name="bed" size="small" color="#999" />
-                  <text class="hotel-card-remaining"
-                    >剩余{{ hotel.remaining }}间</text
-                  >
+                  <text class="hotel-card-remaining">剩余{{ hotel.room_count || hotel.remaining || 5 }}间</text>
                 </view>
                 <view class="hotel-distance-badge">
                   <Icon name="location" size="xsmall" color="#6366f1" />
@@ -220,6 +240,8 @@
             </view>
           </view>
         </view>
+        <!-- 空状态 -->
+        <EmptyState v-else type="hotel" title="暂无酒店信息" />
       </view>
 
       <!-- 优惠信息区 -->
@@ -227,7 +249,33 @@
         <view class="section-header">
           <text class="section-title">限时优惠</text>
         </view>
-        <view class="coupon-grid">
+        <!-- 骨架屏 -->
+        <view v-if="couponStore.loading.limited && !couponStore.limitedTimeCoupons.length" class="coupon-grid">
+          <SkeletonScreen v-for="i in 3" :key="i" type="coupon" />
+        </view>
+        <!-- 优惠券列表 -->
+        <view v-else-if="couponStore.limitedTimeCoupons.length" class="coupon-grid">
+          <view
+            v-for="coupon in couponStore.limitedTimeCoupons"
+            :key="coupon.id"
+            class="coupon-item"
+            @click="handleReceiveCoupon(coupon)"
+          >
+            <view class="coupon-amount">
+              <text class="coupon-value">{{ formatCouponValue(coupon) }}</text>
+              <text class="coupon-unit">{{ coupon.type === 'percent' ? '折' : '元' }}</text>
+            </view>
+            <view class="coupon-info">
+              <text class="coupon-title">{{ coupon.name }}</text>
+              <text class="coupon-desc">{{ formatCouponCondition(coupon) }}</text>
+            </view>
+            <view class="coupon-button" :class="{ claimed: !coupon.can_receive || couponStore.isReceiving(coupon.id) }">
+              <text class="coupon-button-text">{{ getCouponButtonText(coupon) }}</text>
+            </view>
+          </view>
+        </view>
+        <!-- 默认优惠券 -->
+        <view v-else class="coupon-grid">
           <view class="coupon-item" @click="receiveCoupon('newbie')">
             <view class="coupon-amount">
               <text class="coupon-value">50</text>
@@ -272,22 +320,27 @@
 
       <!-- 精选优品区 -->
       <view class="section products-section animate__animated animate__fadeInRight">
-         <view class="section-header">
+        <view class="section-header">
           <text class="section-title">精选优品</text>
           <view class="section-more" @click="goToMall">
             <text class="section-more-text">更多</text>
             <Icon name="chevron-right" size="small" color="#fff" />
           </view>
         </view>
-        <view class="products-grid">
+        <!-- 骨架屏 -->
+        <view v-if="mallStore.loading.selected && !mallStore.hasSelectedProducts" class="products-grid">
+          <SkeletonScreen v-for="i in 4" :key="i" type="product-card" />
+        </view>
+        <!-- 商品列表 -->
+        <view v-else-if="mallStore.hasSelectedProducts" class="products-grid">
           <view
-            v-for="product in selectedProducts"
+            v-for="product in mallStore.selectedProducts"
             :key="product.id"
             class="product-item"
             @click="goToProductDetail(product)"
           >
             <image
-              :src="product.image"
+              :src="getProductImage(product)"
               class="product-image"
               mode="aspectFill"
             />
@@ -295,12 +348,11 @@
               <text class="product-name">{{ product.name }}</text>
               <view class="product-price">
                 <text class="price-current">¥{{ product.price }}</text>
-                <text class="price-member">会员¥{{ product.memberPrice }}</text>
+                <text class="price-member">会员¥{{ product.original_price || product.price * 0.9 }}</text>
               </view>
               <view class="product-actions">
                 <view class="cart-button" @click.stop="addToCart(product)">
-                  <Icon name="shopping-cart-check" size="small" color="#be32d7"
-                  />
+                  <Icon name="shopping-cart-check" size="small" color="#be32d7" />
                 </view>
                 <view class="buy-button" @click.stop="buyNow(product)">
                   <text class="buy-text">立即购买</text>
@@ -309,6 +361,8 @@
             </view>
           </view>
         </view>
+        <!-- 空状态 -->
+        <EmptyState v-else type="product" title="暂无精选商品" />
       </view>
 
       <!-- 申请入口区 -->
@@ -328,6 +382,15 @@
             </view>
             <Icon name="chevron-right" size="medium" color="#fff" />
           </view>
+        </view>
+      </view>
+
+      <!-- 缓存数据提示 -->
+      <view v-if="showCacheWarning" class="cache-warning">
+        <Icon name="info" size="small" color="#F59E0B" />
+        <text class="cache-warning-text">网络异常，展示的可能不是最新数据</text>
+        <view class="cache-refresh" @click="forceRefreshAll">
+          <Icon name="rotate-ccw" size="small" color="#F59E0B" />
         </view>
       </view>
 
@@ -356,118 +419,49 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import { useAppStore } from "@/stores/app";
 import { useUserStore } from "@/stores/user";
+import { useBannerStore } from "@/stores/banner";
+import { useHotelStore } from "@/stores/hotel";
+import { useMallStore } from "@/stores/mall";
+import { useCouponStore } from "@/stores/coupon";
 import Icon from "@/components/common/Icon.vue";
 import CustomTabBar from "@/components/layout/CustomTabBar.vue";
+import SkeletonScreen from "@/components/layout/SkeletonScreen.vue";
+import EmptyState from "@/components/common/EmptyState.vue";
 
 export default {
   name: "IndexPage",
   components: {
     Icon,
     CustomTabBar,
-  },
-  // 页面配置
-  onPageScroll(e) {
-    // 这里需要通过组件实例来更新状态
-    if (this.updateScrollState) {
-      this.updateScrollState(e.scrollTop);
-    }
+    SkeletonScreen,
+    EmptyState,
   },
   setup() {
     const appStore = useAppStore();
     const userStore = useUserStore();
+    const bannerStore = useBannerStore();
+    const hotelStore = useHotelStore();
+    const mallStore = useMallStore();
+    const couponStore = useCouponStore();
 
     // 页面状态
     const unreadMessageCount = ref(3);
-    const currentLocation = ref("北京市朝阳区");
     const activeHotelTab = ref(0);
     const isScrolled = ref(false);
+    const isRefreshing = ref(false);
+    const locationDenied = ref(false);
+    const currentLocation = ref(null);
+    const showCacheWarning = ref(false);
 
-    // 优惠券状态管理
+    // 优惠券状态管理（本地mock）
     const couponStatus = reactive({
       newbie: false,
       discount: false,
       monthlyCard: false
     });
-
-    // 轮播图数据 (750x300px)
-    const banners = ref([
-      {
-        id: 1,
-        image:
-          "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/banner-03.png",
-        title: "新用户专享优惠",
-        link: "",
-      },
-      {
-        id: 2,
-        image:
-          "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/banner-04.png",
-        title: "热门酒店推荐",
-        link: "",
-      },
-      {
-        id: 3,
-        image:
-          "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/banner-03.png",
-        title: "商城限时特惠",
-        link: "",
-      },
-      {
-        id: 4,
-        image:
-          "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/banner-04.png",
-        title: "分销赚钱计划",
-        link: "",
-      },
-    ]);
-
-    // 推荐酒店 (200x150px)
-    const recommendHotels = ref([
-      {
-        id: 1,
-        name: "木兮云庐 HOTEL【云谷学校店】",
-        address: "浙江省杭州市西湖区振华路666号4幢...",
-        distance: 21.24,
-        coverImage: "https://picsum.photos/200/150?random=10",
-      },
-    ]);
-
-    // 热门房型 (280x200px)
-    const hotRooms = ref([
-      {
-        id: 1,
-        name: "90分钟体验房",
-        description: "90分钟大床房+无限次互动体验",
-        remaining: 5,
-        availableTime: "11:30可约",
-        originalPrice: 399,
-        memberPrice: 299,
-        coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/room02.jpg",
-      },
-      {
-        id: 2,
-        name: "钟点大床房",
-        description: "3小时大床房+浪漫主题+专属服务",
-        remaining: 3,
-        availableTime: "14:00可约",
-        originalPrice: 599,
-        memberPrice: 459,
-        coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/room03.jpg",
-      },
-      {
-        id: 3,
-        name: "主题大床房",
-        description: "12小时主题房+畅爽体验+专业设备",
-        remaining: 2,
-        availableTime: "16:30可约",
-        originalPrice: 799,
-        memberPrice: 659,
-        coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/room01.jpg",
-      },
-    ]);
 
     // 酒店分类标签
     const hotelTabs = ref([
@@ -477,257 +471,212 @@ export default {
       { name: "尊住酒店", type: "luxury" },
     ]);
 
-    // 不同分类的酒店数据
-    const hotelsByCategory = ref({
+    // 本地mock酒店数据（位置权限被拒绝或API失败时使用）
+    const localHotelsByCategory = ref({
       gaming: [
-        {
-          id: 1,
-          name: "城市猎手电竞酒店",
-          priceRange: { min: 199, max: 399 },
-          remaining: 8,
-          distance: 1.2,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel01.jpg",
-        },
-        {
-          id: 5,
-          name: "王者荣耀电竞主题",
-          priceRange: { min: 259, max: 459 },
-          remaining: 6,
-          distance: 2.8,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel02.jpg",
-        },
-        {
-          id: 6,
-          name: "英雄联盟竞技酒店",
-          priceRange: { min: 299, max: 529 },
-          remaining: 4,
-          distance: 3.5,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel03.jpg",
-        },
-        {
-          id: 7,
-          name: "绝地求生战队基地",
-          priceRange: { min: 329, max: 589 },
-          remaining: 3,
-          distance: 4.1,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel04.jpg",
-        },
+        { id: 1, name: "城市猎手电竞酒店", room_count: 8, distance: 1.2, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel01.jpg"] },
+        { id: 5, name: "王者荣耀电竞主题", room_count: 6, distance: 2.8, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel02.jpg"] },
+        { id: 6, name: "英雄联盟竞技酒店", room_count: 4, distance: 3.5, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel03.jpg"] },
+        { id: 7, name: "绝地求生战队基地", room_count: 3, distance: 4.1, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel04.jpg"] },
       ],
       theme: [
-        {
-          id: 8,
-          name: "浪漫巴黎情侣主题",
-          priceRange: { min: 299, max: 599 },
-          remaining: 5,
-          distance: 1.8,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel05.jpg",
-        },
-        {
-          id: 9,
-          name: "维多利亚复古庄园",
-          priceRange: { min: 399, max: 699 },
-          remaining: 3,
-          distance: 3.2,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel06.jpg",
-        },
-        {
-          id: 10,
-          name: "东京樱花日式温泉",
-          priceRange: { min: 459, max: 799 },
-          remaining: 2,
-          distance: 5.6,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel07.jpg",
-        },
-        {
-          id: 11,
-          name: "马尔代夫海景套房",
-          priceRange: { min: 599, max: 999 },
-          remaining: 1,
-          distance: 8.3,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel08.jpg",
-        },
+        { id: 8, name: "浪漫巴黎情侣主题", room_count: 5, distance: 1.8, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel05.jpg"] },
+        { id: 9, name: "维多利亚复古庄园", room_count: 3, distance: 3.2, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel06.jpg"] },
+        { id: 10, name: "东京樱花日式温泉", room_count: 2, distance: 5.6, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel07.jpg"] },
+        { id: 11, name: "马尔代夫海景套房", room_count: 1, distance: 8.3, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel08.jpg"] },
       ],
       private: [
-        {
-          id: 12,
-          name: "都市秘境私人会所",
-          priceRange: { min: 599, max: 999 },
-          remaining: 2,
-          distance: 2.3,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel09.jpg",
-        },
-        {
-          id: 13,
-          name: "紫禁城尊享私邸",
-          priceRange: { min: 799, max: 1299 },
-          remaining: 1,
-          distance: 6.7,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel10.jpg",
-        },
-        {
-          id: 14,
-          name: "香格里拉私密空间",
-          priceRange: { min: 899, max: 1599 },
-          remaining: 2,
-          distance: 4.9,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel11.jpg",
-        },
-        {
-          id: 15,
-          name: "黄金海岸独栋别墅",
-          priceRange: { min: 1299, max: 2399 },
-          remaining: 1,
-          distance: 12.5,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel12.jpg",
-        },
+        { id: 12, name: "都市秘境私人会所", room_count: 2, distance: 2.3, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel09.jpg"] },
+        { id: 13, name: "紫禁城尊享私邸", room_count: 1, distance: 6.7, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel10.jpg"] },
+        { id: 14, name: "香格里拉私密空间", room_count: 2, distance: 4.9, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel11.jpg"] },
+        { id: 15, name: "黄金海岸独栋别墅", room_count: 1, distance: 12.5, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel12.jpg"] },
       ],
       luxury: [
-        {
-          id: 16,
-          name: "丽思卡尔顿总统套房",
-          priceRange: { min: 1599, max: 2999 },
-          remaining: 1,
-          distance: 3.4,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel13.jpg",
-        },
-        {
-          id: 17,
-          name: "四季酒店皇家套房",
-          priceRange: { min: 1899, max: 3599 },
-          remaining: 1,
-          distance: 5.1,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel14.jpg",
-        },
-        {
-          id: 18,
-          name: "半岛酒店至尊体验",
-          priceRange: { min: 2299, max: 4299 },
-          remaining: 1,
-          distance: 7.8,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel15.jpg",
-        },
-        {
-          id: 19,
-          name: "宝格丽奢华臻选",
-          priceRange: { min: 2999, max: 5999 },
-          remaining: 1,
-          distance: 9.2,
-          coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel16.jpg",
-        },
+        { id: 16, name: "丽思卡尔顿总统套房", room_count: 1, distance: 3.4, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel13.jpg"] },
+        { id: 17, name: "四季酒店皇家套房", room_count: 1, distance: 5.1, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel14.jpg"] },
+        { id: 18, name: "半岛酒店至尊体验", room_count: 1, distance: 7.8, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel15.jpg"] },
+        { id: 19, name: "宝格丽奢华臻选", room_count: 1, distance: 9.2, images: ["https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel16.jpg"] },
       ],
     });
 
-    // 当前显示的酒店数据
-    const nearbyHotels = ref(hotelsByCategory.value.gaming);
+    // 计算显示的附近酒店
+    const hasNearbyHotels = computed(() => {
+      return hotelStore.hasNearbyHotels || localHotelsByCategory.value[hotelTabs.value[activeHotelTab.value].type]?.length > 0;
+    });
 
-    // 精选商品 (150x150px)
-    const selectedProducts = ref([
-      {
-        id: 1,
-        name: "杜蕾斯至薄装安全套",
-        price: 89.9,
-        memberPrice: 69.9,
-        image: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/good01.jpg",
-      },
-      {
-        id: 2,
-        name: "KY私密润滑剂50ml",
-        price: 129.9,
-        memberPrice: 99.9,
-        image: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/good02.jpg",
-      },
-      {
-        id: 3,
-        name: "维多利亚蕾丝情趣内衣",
-        price: 299.9,
-        memberPrice: 239.9,
-        image: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/good03.jpg",
-      },
-      {
-        id: 4,
-        name: "Fairvital德国玛卡胶囊",
-        price: 210.9,
-        memberPrice: 159.9,
-        image: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/good04.jpg",
-      },
-      {
-        id: 5,
-        name: "简禾酒精杀菌消毒湿巾",
-        price: 19.9,
-        memberPrice: 16.9,
-        image: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/good05.jpg",
-      },
-      {
-        id: 6,
-        name: " 伊珞EROCOME震动棒",
-        price: 169.9,
-        memberPrice: 139.9,
-        image: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/good06.jpg",
-      },
-    ]);
+    const displayedNearbyHotels = computed(() => {
+      // 优先使用API数据
+      if (hotelStore.hasNearbyHotels && !locationDenied.value) {
+        return hotelStore.nearbyHotels.slice(0, 4);
+      }
+      // 降级使用本地数据
+      const tabType = hotelTabs.value[activeHotelTab.value].type;
+      return localHotelsByCategory.value[tabType] || [];
+    });
 
-    // 事件处理函数
-    const onBannerClick = (banner) => {
-      if (banner.link) {
-        if (
-          banner.link.includes("/pages/mall/index") ||
-          banner.link.includes("/pages/distribution/index")
-        ) {
-          uni.switchTab({ url: banner.link });
-        } else {
-          uni.navigateTo({ url: banner.link });
+    // 获取位置信息
+    const getLocation = () => {
+      return new Promise((resolve, reject) => {
+        uni.getLocation({
+          type: 'gcj02',
+          success: (res) => {
+            currentLocation.value = {
+              longitude: res.longitude,
+              latitude: res.latitude
+            };
+            locationDenied.value = false;
+            resolve(res);
+          },
+          fail: (err) => {
+            console.warn('获取位置失败:', err);
+            locationDenied.value = true;
+            reject(err);
+          }
+        });
+      });
+    };
+
+    // 加载所有首页数据
+    const loadPageData = async (forceRefresh = false) => {
+      showCacheWarning.value = false;
+
+      try {
+        // 并行加载所有数据
+        const promises = [
+          bannerStore.fetchHomeBanners(forceRefresh),
+          hotelStore.fetchRecommendedHotels(forceRefresh),
+          hotelStore.fetchHotRooms(forceRefresh),
+          mallStore.fetchSelectedProducts(forceRefresh),
+          couponStore.fetchLimitedTimeCoupons(forceRefresh),
+        ];
+
+        // 尝试获取位置并加载附近酒店
+        try {
+          await getLocation();
+          if (currentLocation.value) {
+            promises.push(hotelStore.fetchNearbyHotels(currentLocation.value, forceRefresh));
+          }
+        } catch (locErr) {
+          // 位置获取失败，使用热门酒店替代
+          console.log('位置获取失败，显示热门酒店');
         }
+
+        await Promise.allSettled(promises);
+
+        // 检查是否使用了缓存数据
+        if (bannerStore.isFromCache.home ||
+            hotelStore.isFromCache.recommended ||
+            mallStore.isFromCache.selected) {
+          showCacheWarning.value = true;
+        }
+      } catch (error) {
+        console.error("加载首页数据失败:", error);
       }
     };
 
-    const openMessage = () => {
-      // TODO: 跳转到消息列表页面
-      uni.showToast({ title: "消息功能开发中", icon: "none" });
+    // 强制刷新所有数据
+    const forceRefreshAll = async () => {
+      showCacheWarning.value = false;
+      isRefreshing.value = true;
+      try {
+        await loadPageData(true);
+      } finally {
+        isRefreshing.value = false;
+      }
     };
 
-    const switchLocation = () => {
-      // TODO: 实现位置切换功能
-      uni.showToast({ title: "位置切换功能开发中", icon: "none" });
+    // 下拉刷新
+    const onPullDownRefresh = async () => {
+      isRefreshing.value = true;
+      try {
+        await loadPageData(true);
+      } finally {
+        isRefreshing.value = false;
+      }
     };
 
-    const navigateToHotel = (hotel) => {
-      // TODO: 调用地图应用导航
-      uni.showToast({ title: `导航到${hotel.name}`, icon: "none" });
+    // 工具函数
+    const getHotelCoverImage = (hotel) => {
+      if (hotel.images && hotel.images.length > 0) {
+        return hotel.images[0];
+      }
+      return hotel.coverImage || 'https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel01.jpg';
     };
 
-    const goToHotels = () => {
-      uni.navigateTo({ url: "/pages/hotel/list" });
+    const getRoomCoverImage = (room) => {
+      if (room.images && room.images.length > 0) {
+        return room.images[0];
+      }
+      return room.coverImage || 'https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/room01.jpg';
     };
 
-    const goToHotelDetail = (hotel) => {
-      uni.navigateTo({ url: `/pages/hotel/detail?id=${hotel.id}` });
+    const getProductImage = (product) => {
+      if (product.images && product.images.length > 0) {
+        return product.images[0];
+      }
+      return product.image || 'https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/good01.jpg';
     };
 
-    const goToRoomDetail = (room) => {
-      uni.navigateTo({ url: `/pages/hotel/room-detail?id=${room.id}` });
+    const formatAvailableTime = (room) => {
+      if (room.status === 1) {
+        return '可预订';
+      }
+      return '11:30可约';
     };
 
-    const openMembership = () => {
-      // TODO: 跳转到会员开通页面
-      uni.showToast({ title: "会员开通功能开发中", icon: "none" });
+    const formatCouponValue = (coupon) => {
+      if (coupon.type === 'percent') {
+        // 折扣类型：0.1表示9折
+        return Math.round((1 - coupon.value) * 10);
+      }
+      return coupon.value;
     };
 
-    const switchHotelTab = (index) => {
-      activeHotelTab.value = index;
-      const tabType = hotelTabs.value[index].type;
-      nearbyHotels.value = hotelsByCategory.value[tabType];
-      console.log("切换到分类:", hotelTabs.value[index].name);
+    const formatCouponCondition = (coupon) => {
+      if (coupon.min_amount > 0) {
+        return `满${coupon.min_amount}可用`;
+      }
+      return '无门槛';
     };
 
+    const getCouponButtonText = (coupon) => {
+      if (couponStore.isReceiving(coupon.id)) {
+        return '领取中...';
+      }
+      if (coupon.received_by_user >= coupon.per_user_limit) {
+        return '已领取';
+      }
+      if (coupon.remain_count <= 0) {
+        return '已抢光';
+      }
+      if (!coupon.can_receive) {
+        return '已领取';
+      }
+      return '领取';
+    };
+
+    // 领取优惠券
+    const handleReceiveCoupon = async (coupon) => {
+      if (!coupon.can_receive || couponStore.isReceiving(coupon.id)) {
+        return;
+      }
+
+      const result = await couponStore.receiveCouponById(coupon.id);
+      uni.showToast({
+        title: result.message,
+        icon: result.success ? 'success' : 'none'
+      });
+    };
+
+    // 本地优惠券领取（mock）
     const receiveCoupon = (type) => {
       if (couponStatus[type]) {
         uni.showToast({ title: "您已领取过该优惠券", icon: "none" });
         return;
       }
-      
-      // 更新状态
+
       couponStatus[type] = true;
-      
+
       let message = '';
       switch(type) {
         case 'newbie':
@@ -739,7 +688,7 @@ export default {
         default:
           message = '优惠券领取成功！';
       }
-      
+
       uni.showToast({ title: message, icon: "success" });
     };
 
@@ -748,10 +697,66 @@ export default {
         uni.showToast({ title: "您已开通包月卡", icon: "none" });
         return;
       }
-      
-      // 更新状态
+
       couponStatus.monthlyCard = true;
       uni.showToast({ title: "包月卡开通成功！", icon: "success" });
+    };
+
+    // 事件处理函数
+    const onBannerClick = (banner) => {
+      if (banner.link_value) {
+        const link = banner.link_value;
+        if (link.includes("/pages/mall/index") || link.includes("/pages/distribution/index")) {
+          uni.switchTab({ url: link });
+        } else {
+          uni.navigateTo({ url: link });
+        }
+      } else if (banner.link) {
+        // 兼容旧格式
+        if (banner.link.includes("/pages/mall/index") || banner.link.includes("/pages/distribution/index")) {
+          uni.switchTab({ url: banner.link });
+        } else {
+          uni.navigateTo({ url: banner.link });
+        }
+      }
+    };
+
+    const openMessage = () => {
+      uni.showToast({ title: "消息功能开发中", icon: "none" });
+    };
+
+    const navigateToHotel = (hotel) => {
+      if (hotel.longitude && hotel.latitude) {
+        uni.openLocation({
+          latitude: hotel.latitude,
+          longitude: hotel.longitude,
+          name: hotel.name,
+          address: hotel.full_address || hotel.address
+        });
+      } else {
+        uni.showToast({ title: `导航到${hotel.name}`, icon: "none" });
+      }
+    };
+
+    const goToHotels = () => {
+      uni.navigateTo({ url: "/pages/hotel/list" });
+    };
+
+    const goToHotelDetail = (hotel) => {
+      uni.navigateTo({ url: `/pages/hotel/detail?id=${hotel.id}` });
+    };
+
+    const goToRoomDetail = (room) => {
+      // T047: 热门房型卡片点击跳转到房型详情页
+      uni.navigateTo({ url: `/pages/hotel/room-detail?id=${room.id}&hotelId=${room.hotel_id}` });
+    };
+
+    const openMembership = () => {
+      uni.showToast({ title: "会员开通功能开发中", icon: "none" });
+    };
+
+    const switchHotelTab = (index) => {
+      activeHotelTab.value = index;
     };
 
     const goToMall = () => {
@@ -763,29 +768,24 @@ export default {
     };
 
     const addToCart = (product) => {
-      // TODO: 添加到购物车
       uni.showToast({ title: "已加入购物车", icon: "success" });
     };
 
     const buyNow = (product) => {
-      // TODO: 立即购买
       uni.navigateTo({
         url: `/pages/mall/product-detail?id=${product.id}&action=buy`,
       });
     };
 
     const applyOperation = () => {
-      // TODO: 跳转到运营申请页面
       uni.showToast({ title: "运营申请功能开发中", icon: "none" });
     };
 
     const applyAgent = () => {
-      // TODO: 跳转到代理申请页面
       uni.showToast({ title: "代理申请功能开发中", icon: "none" });
     };
 
     const openCustomerService = () => {
-      // TODO: 显示客服选项弹窗
       uni.showActionSheet({
         itemList: ["在线客服", "电话客服", "帮助中心"],
         success: (res) => {
@@ -802,7 +802,6 @@ export default {
       console.log("Tab changed:", tab);
     };
 
-
     // 滚动监听
     const onPageScroll = (e) => {
       const { scrollTop } = e.detail;
@@ -814,23 +813,6 @@ export default {
       isScrolled.value = scrollTop > 50;
     };
 
-    // 数据加载
-    const loadPageData = async () => {
-      try {
-        // TODO: 从API加载实际数据
-        console.log("加载首页数据");
-      } catch (error) {
-        console.error("加载首页数据失败:", error);
-      }
-    };
-
-    // 下拉刷新
-    const onPullDownRefresh = () => {
-      loadPageData().finally(() => {
-        uni.stopPullDownRefresh();
-      });
-    };
-
     onMounted(() => {
       loadPageData();
       appStore.getSystemInfo();
@@ -838,27 +820,39 @@ export default {
 
     return {
       userStore,
+      bannerStore,
+      hotelStore,
+      mallStore,
+      couponStore,
       unreadMessageCount,
-      currentLocation,
       activeHotelTab,
       isScrolled,
-      banners,
-      recommendHotels,
-      hotRooms,
+      isRefreshing,
+      locationDenied,
+      showCacheWarning,
       hotelTabs,
-      hotelsByCategory,
-      nearbyHotels,
-      selectedProducts,
+      localHotelsByCategory,
+      hasNearbyHotels,
+      displayedNearbyHotels,
+      couponStatus,
+      // 工具函数
+      getHotelCoverImage,
+      getRoomCoverImage,
+      getProductImage,
+      formatAvailableTime,
+      formatCouponValue,
+      formatCouponCondition,
+      getCouponButtonText,
+      // 事件处理
       onBannerClick,
       openMessage,
-      switchLocation,
       navigateToHotel,
       goToHotels,
       goToHotelDetail,
       goToRoomDetail,
       openMembership,
       switchHotelTab,
-      couponStatus,
+      handleReceiveCoupon,
       receiveCoupon,
       buyMonthlyCard,
       goToMall,
@@ -872,12 +866,8 @@ export default {
       onPageScroll,
       updateScrollState,
       onPullDownRefresh,
+      forceRefreshAll,
     };
-  },
-
-  // 页面生命周期
-  onPullDownRefresh() {
-    this.onPullDownRefresh();
   },
 };
 </script>
@@ -1003,12 +993,35 @@ export default {
     width: 100%;
     height: 100%;
   }
+
+  .banner-placeholder {
+    height: 300rpx;
+    border-radius: $border-radius-xl;
+    background: rgba(255, 255, 255, 0.1);
+    @include flex-center();
+
+    .placeholder-text {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: $font-size-sm;
+    }
+  }
 }
 
 // 页面内容
 .page-content {
   flex: 1;
   padding: 0 0 $spacing-lg;
+}
+
+// 空占位
+.empty-placeholder {
+  padding: $spacing-xl;
+  @include flex-center();
+
+  .placeholder-text {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: $font-size-sm;
+  }
 }
 
 // 通用section样式
@@ -1264,7 +1277,7 @@ export default {
 
       .member-content {
         flex: 1;
-        
+
         .member-header {
           @include flex();
           align-items: center;
@@ -1276,7 +1289,7 @@ export default {
             font-weight: $font-weight-bold;
           }
         }
-        
+
         .member-benefits-text {
           font-size: $font-size-xs;
           color: #A0522D;
@@ -1312,7 +1325,7 @@ export default {
 
       .member-content {
         flex: 1;
-        
+
         .member-header {
           @include flex();
           align-items: center;
@@ -1545,12 +1558,12 @@ export default {
           color: #fff;
           font-weight: $font-weight-semibold;
         }
-        
+
         &.claimed {
           background: $text-tertiary;
           opacity: 0.6;
           pointer-events: none;
-          
+
           .coupon-button-text {
             color: #fff;
           }
@@ -1655,12 +1668,12 @@ export default {
 // 申请入口区
 .apply-section-new {
   margin: 0 $spacing-lg $spacing-xl;
-  
+
   .apply-buttons-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: $spacing-base;
-    
+
     .apply-button-item {
       @include flex-between();
       align-items: center;
@@ -1674,17 +1687,17 @@ export default {
         transform: scale(0.95);
         background: rgba(255, 255, 255, 0.3);
       }
-      
+
       .apply-text-content {
         flex: 1;
-        
+
         .apply-main-title {
           font-size: $font-size-base;
           font-weight: $font-weight-semibold;
           color: #fff;
           display: block;
         }
-        
+
         .apply-sub-desc {
           font-size: $font-size-xs;
           color: rgba(255, 255, 255, 0.8);
@@ -1695,12 +1708,34 @@ export default {
   }
 }
 
+// 缓存警告提示
+.cache-warning {
+  margin: 0 $spacing-lg $spacing-base;
+  padding: $spacing-sm $spacing-base;
+  background: rgba(245, 158, 11, 0.15);
+  border-radius: $border-radius-base;
+  @include flex();
+  align-items: center;
+  gap: $spacing-sm;
+
+  .cache-warning-text {
+    flex: 1;
+    font-size: $font-size-xs;
+    color: #F59E0B;
+  }
+
+  .cache-refresh {
+    padding: $spacing-xs;
+    @include flex-center();
+  }
+}
+
 // 公司版权信息区
-.footer-section {  
+.footer-section {
   .company-info {
     text-align: center;
     padding-bottom: $spacing-lg;
-    
+
     .company-name {
       font-size: $font-size-sm;
       font-weight: $font-weight-semibold;
@@ -1708,14 +1743,14 @@ export default {
       display: block;
       margin-bottom: $spacing-xs;
     }
-    
+
     .company-details {
       font-size: $font-size-xs;
       color: $background-primary;
       display: block;
       margin-bottom: $spacing-xs;
     }
-    
+
     .icp-info {
       font-size: $font-size-xs;
       color: $background-primary;

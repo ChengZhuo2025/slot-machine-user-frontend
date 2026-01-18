@@ -145,7 +145,7 @@
     </view>
 
     <!-- 酒店列表 -->
-    <scroll-view 
+    <scroll-view
       class="hotel-list-scroll"
       scroll-y="true"
       :refresher-enabled="true"
@@ -154,8 +154,25 @@
       @scrolltolower="onLoadMore"
     >
       <view class="hotel-list">
-        <view 
-          v-for="(hotel, index) in filteredHotels" 
+        <!-- 加载状态 -->
+        <LoadingState
+          v-if="isLoading && filteredHotels.length === 0"
+          text="加载中..."
+          size="large"
+        />
+
+        <!-- 错误状态 -->
+        <ErrorState
+          v-else-if="hotelStore.error.list && filteredHotels.length === 0"
+          type="network"
+          :title="hotelStore.error.list"
+          message="请检查网络连接后重试"
+          @retry="onRefresh"
+        />
+
+        <!-- 酒店卡片列表 -->
+        <view
+          v-for="(hotel, index) in filteredHotels"
           :key="hotel.id"
           class="hotel-card animate__animated animate__fadeInUp"
           :style="{ animationDelay: (index % 10) * 100 + 'ms' }"
@@ -163,8 +180,14 @@
           @longpress="toggleFavorite(hotel)"
         >
           <view class="hotel-main-content">
-            <!-- 酒店封面图 -->
-            <image class="hotel-image" :src="hotel.coverImage" mode="aspectFill" />
+            <!-- 酒店封面图 - 启用懒加载 -->
+            <image
+              class="hotel-image"
+              :src="hotel.thumbnailImage"
+              mode="aspectFill"
+              lazy-load
+              :data-full-src="hotel.fullSizeImage"
+            />
             
             <!-- 酒店信息 -->
             <view class="hotel-content">
@@ -237,33 +260,44 @@
         </view>
         
         <!-- 空状态 -->
-        <view v-if="filteredHotels.length === 0 && !isLoading" class="empty-state">
-          <Icon name="building" size="large" color="#ccc" />
-          <text class="empty-text">{{ searchKeyword ? '没有找到相关酒店' : '暂无酒店数据' }}</text>
-        </view>
+        <EmptyState
+          v-if="filteredHotels.length === 0 && !isLoading && !hotelStore.error.list"
+          :type="searchKeyword ? 'search' : 'hotel'"
+          :title="searchKeyword ? '没有找到相关酒店' : '暂无酒店数据'"
+          :description="searchKeyword ? '试试其他关键词' : ''"
+          action-text="刷新"
+          @action="onRefresh"
+        />
       </view>
     </scroll-view>
   </view>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Icon from '@/components/common/Icon.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import ErrorState from '@/components/common/ErrorState.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import { useHotelStore } from '@/stores/hotel'
+import { debounce } from '@/utils/debounce'
+import { requestQueue } from '@/utils/requestQueue'
+import { getThumbnailUrl, getFullSizeUrl } from '@/utils/imageLoader'
 
 export default {
   name: 'HotelListPage',
   components: {
-    Icon
+    Icon,
+    LoadingState,
+    ErrorState,
+    EmptyState
   },
   setup() {
-    
+    // 使用 Hotel Store
+    const hotelStore = useHotelStore()
+
     // 页面状态
-    const isLoading = ref(false)
     const isRefreshing = ref(false)
-    const isLoadingMore = ref(false)
-    const hasMore = ref(false) // 改为false，因为是静态数据，没有更多数据加载
-    const currentPage = ref(1)
-    const pageSize = 10
     
     // 搜索相关
     const searchKeyword = ref('')
@@ -296,120 +330,45 @@ export default {
     
     // 当前排序
     const currentSort = computed(() => sortOptions.value[selectedSortIndex.value])
+
+    // 用户位置信息
+    const userLocation = ref(null)
+
+    // 收藏状态（本地管理）
+    const favoriteIds = ref(new Set())
     
-    // 酒店数据 - 使用首页的数据结构
-    const allHotels = ref([
-      {
-        id: 1,
-        name: "城市猎手电竞酒店",
-        address: "北京市朝阳区望京SOHO-T1-2301",
-        distance: 1.2,
-        priceRange: { min: 199, max: 399 },
-        remaining: 8,
-        type: 'gaming',
-        rating: 4.8,
-        stars: 4,
-        sales: 2680,
-        isFavorite: false,
-        coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel01.jpg",
-      },
-      {
-        id: 2,
-        name: "王者荣耀电竞主题",
-        address: "北京市海淀区中关村大街32号",
-        distance: 2.5,
-        priceRange: { min: 259, max: 459 },
-        remaining: 6,
-        type: 'gaming',
-        rating: 4.7,
-        stars: 4,
-        sales: 1890,
-        isFavorite: true,
-        coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel02.jpg",
-      },
-      {
-        id: 3,
-        name: "浪漫主题情侣酒店",
-        address: "北京市东城区王府井大街138号",
-        distance: 3.8,
-        priceRange: { min: 299, max: 599 },
-        remaining: 4,
-        type: 'theme',
-        rating: 4.9,
-        stars: 5,
-        sales: 3200,
-        isFavorite: false,
-        coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel03.jpg",
-      },
-      {
-        id: 4,
-        name: "私享VIP精品酒店",
-        address: "北京市西城区金融街B9号",
-        distance: 4.2,
-        priceRange: { min: 399, max: 899 },
-        remaining: 2,
-        type: 'private',
-        rating: 4.9,
-        stars: 5,
-        sales: 1560,
-        isFavorite: false,
-        coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel04.jpg",
-      },
-      {
-        id: 5,
-        name: "尊住商务度假酒店",
-        address: "北京市丰台区丽泽金融商务区",
-        distance: 6.8,
-        priceRange: { min: 599, max: 1299 },
-        remaining: 12,
-        type: 'luxury',
-        rating: 5.0,
-        stars: 5,
-        sales: 890,
-        isFavorite: false,
-        coverImage: "https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel05.jpg",
+    // 转换后端数据格式为前端UI格式
+    const transformHotelData = (hotel) => {
+      const originalImage = Array.isArray(hotel.images) && hotel.images.length > 0
+        ? hotel.images[0]
+        : 'https://fuguanjia.oss-cn-beijing.aliyuncs.com/images/hotel-default.jpg'
+
+      return {
+        id: hotel.id,
+        name: hotel.name,
+        address: hotel.full_address || hotel.address,
+        distance: hotel.distance || 0,
+        priceRange: {
+          min: hotel.min_price || 0,
+          max: hotel.min_price ? hotel.min_price * 2 : 0
+        },
+        remaining: hotel.room_count || 0,
+        type: hotel.category || 'all',
+        rating: hotel.recommend_score ? hotel.recommend_score / 20 : 4.5, // 转换为5分制
+        stars: hotel.star_rating || 4,
+        sales: hotel.booking_count || 0,
+        isFavorite: favoriteIds.value.has(hotel.id),
+        coverImage: originalImage,
+        // 图片懒加载：生成缩略图和高清图
+        thumbnailImage: getThumbnailUrl(originalImage, 200),
+        fullSizeImage: getFullSizeUrl(originalImage, 750)
       }
-    ])
-    
-    // 筛选后的酒店列表
+    }
+
+    // 筛选后的酒店列表（从Store获取并转换格式）
     const filteredHotels = computed(() => {
-      let result = [...allHotels.value]
-      
-      // 类型筛选
-      if (selectedTypeIndex.value > 0) {
-        const selectedType = hotelTypes.value[selectedTypeIndex.value].key
-        result = result.filter(hotel => hotel.type === selectedType)
-      }
-      
-      // 关键词搜索
-      if (searchKeyword.value.trim()) {
-        const keyword = searchKeyword.value.trim().toLowerCase()
-        result = result.filter(hotel => 
-          hotel.name.toLowerCase().includes(keyword) || 
-          hotel.address.toLowerCase().includes(keyword)
-        )
-      }
-      
-      // 排序
-      const sortKey = sortOptions.value[selectedSortIndex.value].key
-      result.sort((a, b) => {
-        switch (sortKey) {
-          case 'distance':
-            return a.distance - b.distance
-          case 'rating':
-            return b.rating - a.rating
-          case 'sales':
-            return b.sales - a.sales
-          case 'price_asc':
-            return a.priceRange.min - b.priceRange.min
-          case 'price_desc':
-            return b.priceRange.max - a.priceRange.max
-          default:
-            return 0
-        }
-      })
-      
-      return result
+      const hotels = hotelStore.hotels.map(transformHotelData)
+      return hotels
     })
     
     // 方法定义
@@ -429,14 +388,44 @@ export default {
       })
     }
     
+    // 创建防抖搜索函数
+    const debouncedSearch = debounce(async (keyword) => {
+      try {
+        // 使用请求队列管理，自动取消之前的搜索请求
+        const requestKey = requestQueue.generateKey('hotel', 'search', { keyword })
+        await requestQueue.execute(requestKey, async () => {
+          hotelStore.setFilters({ keyword })
+          await hotelStore.fetchHotelList({ refresh: true })
+        })
+      } catch (error) {
+        if (!requestQueue.isAbortError(error)) {
+          console.error('搜索失败:', error)
+          uni.showToast({ title: '搜索失败', icon: 'none' })
+        }
+      }
+    }, 400)
+
     const onSearchInput = () => {
       showSearchHistory.value = searchKeyword.value.length === 0
+
+      // 如果有输入内容，触发防抖搜索
+      if (searchKeyword.value.trim()) {
+        debouncedSearch(searchKeyword.value.trim())
+      } else {
+        // 清空搜索，重新加载列表
+        hotelStore.setFilters({ keyword: '' })
+        hotelStore.fetchHotelList({ refresh: true })
+      }
     }
-    
+
     const onSearchConfirm = () => {
       if (searchKeyword.value.trim()) {
         addToSearchHistory(searchKeyword.value.trim())
         showSearchHistory.value = false
+        // 立即执行搜索
+        debouncedSearch.cancel() // 取消防抖
+        hotelStore.setFilters({ keyword: searchKeyword.value.trim() })
+        hotelStore.fetchHotelList({ refresh: true })
       }
     }
     
@@ -469,43 +458,85 @@ export default {
       uni.removeStorageSync('hotel_search_history')
     }
     
-    const selectHotelType = (index) => {
+    const selectHotelType = async (index) => {
       selectedTypeIndex.value = index
       showTypeFilter.value = false
+
+      // 设置分类筛选
+      const selectedType = hotelTypes.value[index]
+      const categoryId = selectedType.key === 'all' ? null : selectedType.key
+
+      try {
+        const requestKey = requestQueue.generateKey('hotel', 'filter', { categoryId })
+        await requestQueue.execute(requestKey, async () => {
+          hotelStore.setFilters({ categoryId })
+          await hotelStore.fetchHotelList({ refresh: true })
+        })
+      } catch (error) {
+        if (!requestQueue.isAbortError(error)) {
+          console.error('筛选失败:', error)
+          uni.showToast({ title: '筛选失败', icon: 'none' })
+        }
+      }
     }
-    
+
     const toggleTypeFilter = () => {
       showTypeFilter.value = !showTypeFilter.value
     }
-    
+
     const toggleSortMenu = () => {
       showSortMenu.value = !showSortMenu.value
     }
-    
+
     const hideSortMenu = () => {
       showSortMenu.value = false
     }
-    
-    const selectSort = (index) => {
+
+    const selectSort = async (index) => {
       selectedSortIndex.value = index
       showSortMenu.value = false
+
+      // 设置排序类型
+      const sortType = sortOptions.value[index].key
+
+      try {
+        const requestKey = requestQueue.generateKey('hotel', 'sort', { sortType })
+        await requestQueue.execute(requestKey, async () => {
+          hotelStore.setFilters({ sortType })
+          await hotelStore.fetchHotelList({ refresh: true })
+        })
+      } catch (error) {
+        if (!requestQueue.isAbortError(error)) {
+          console.error('排序失败:', error)
+          uni.showToast({ title: '排序失败', icon: 'none' })
+        }
+      }
     }
     
-    const onRefresh = () => {
+    const onRefresh = async () => {
       isRefreshing.value = true
-      // 模拟刷新数据
-      setTimeout(() => {
-        isRefreshing.value = false
+      try {
+        // 强制刷新数据
+        await hotelStore.fetchHotelList({ refresh: true })
         uni.showToast({ title: '刷新成功', icon: 'success' })
-      }, 1000)
+      } catch (error) {
+        console.error('刷新失败:', error)
+        uni.showToast({ title: '刷新失败', icon: 'none' })
+      } finally {
+        isRefreshing.value = false
+      }
     }
-    
-    const onLoadMore = () => {
-      // 由于使用静态数据，没有更多数据可加载
-      if (isLoadingMore.value || !hasMore.value) return
-      
-      // 可以在这里实现真实的加载更多逻辑
-      console.log('触发加载更多，但当前为静态数据')
+
+    const onLoadMore = async () => {
+      // 检查是否还有更多数据
+      if (hotelStore.loading.list || !hotelStore.pagination.hasMore) return
+
+      try {
+        await hotelStore.fetchHotelList({ loadMore: true })
+      } catch (error) {
+        console.error('加载更多失败:', error)
+        uni.showToast({ title: '加载失败', icon: 'none' })
+      }
     }
     
     const goToHotelDetail = (hotel) => {
@@ -515,9 +546,51 @@ export default {
     }
     
     const toggleFavorite = (hotel) => {
-      hotel.isFavorite = !hotel.isFavorite
-      const message = hotel.isFavorite ? '已添加到收藏' : '已取消收藏'
-      uni.showToast({ title: message, icon: 'success' })
+      // 更新本地收藏状态
+      if (favoriteIds.value.has(hotel.id)) {
+        favoriteIds.value.delete(hotel.id)
+        uni.showToast({ title: '已取消收藏', icon: 'success' })
+      } else {
+        favoriteIds.value.add(hotel.id)
+        uni.showToast({ title: '已添加到收藏', icon: 'success' })
+      }
+      // 保存到本地存储
+      uni.setStorageSync('hotel_favorites', Array.from(favoriteIds.value))
+    }
+
+    // 获取用户位置
+    const getUserLocation = () => {
+      return new Promise((resolve, reject) => {
+        uni.getLocation({
+          type: 'gcj02',
+          success: (res) => {
+            userLocation.value = {
+              longitude: res.longitude,
+              latitude: res.latitude
+            }
+            resolve(userLocation.value)
+          },
+          fail: (err) => {
+            console.warn('获取位置失败:', err)
+            reject(err)
+          }
+        })
+      })
+    }
+
+    // 加载附近酒店（位置筛选）
+    const loadNearbyHotels = async () => {
+      try {
+        const location = await getUserLocation()
+        hotelStore.setFilters({ location })
+        await hotelStore.fetchHotelList({ refresh: true })
+        uni.showToast({ title: '已切换到附近酒店', icon: 'success' })
+      } catch (error) {
+        console.error('获取位置失败:', error)
+        uni.showToast({ title: '获取位置失败，显示默认列表', icon: 'none' })
+        // 降级：显示默认列表
+        await hotelStore.fetchHotelList({ refresh: true })
+      }
     }
     
     const navigateToHotel = (hotel) => {
@@ -537,20 +610,44 @@ export default {
     }
     
     // 初始化
-    onMounted(() => {
+    onMounted(async () => {
       // 加载搜索历史
       const history = uni.getStorageSync('hotel_search_history')
       if (history && Array.isArray(history)) {
         searchHistory.value = history
       }
+
+      // 加载收藏列表
+      const favorites = uni.getStorageSync('hotel_favorites')
+      if (favorites && Array.isArray(favorites)) {
+        favoriteIds.value = new Set(favorites)
+      }
+
+      // 初始化加载酒店列表
+      try {
+        await hotelStore.fetchHotelList({ refresh: true })
+      } catch (error) {
+        console.error('加载酒店列表失败:', error)
+        uni.showToast({ title: '加载失败', icon: 'none' })
+      }
+    })
+
+    // 组件卸载时清理
+    onUnmounted(() => {
+      // 取消所有待处理的请求
+      requestQueue.cancelByModule('hotel')
+      // 取消防抖
+      if (debouncedSearch && debouncedSearch.cancel) {
+        debouncedSearch.cancel()
+      }
     })
     
     return {
       // 状态
-      isLoading,
+      isLoading: computed(() => hotelStore.loading.list),
       isRefreshing,
-      isLoadingMore,
-      hasMore,
+      isLoadingMore: computed(() => hotelStore.loading.list && hotelStore.pagination.page > 1),
+      hasMore: computed(() => hotelStore.pagination.hasMore),
       searchKeyword,
       showSearchHistory,
       searchHistory,
@@ -563,7 +660,7 @@ export default {
       sortOptions,
       currentSort,
       filteredHotels,
-      
+
       // 方法
       goBack,
       scanCode,
@@ -581,7 +678,8 @@ export default {
       onLoadMore,
       goToHotelDetail,
       toggleFavorite,
-      navigateToHotel
+      navigateToHotel,
+      loadNearbyHotels
     }
   }
 }

@@ -24,13 +24,13 @@
 
 **Purpose**: 工具函数和公共组件初始化
 
-- [ ] T001 [P] 创建防抖工具函数 in src/utils/debounce.js
-- [ ] T002 [P] 创建请求队列管理器 in src/utils/requestQueue.js
-- [ ] T003 [P] 创建图片懒加载工具 in src/utils/imageLoader.js
-- [ ] T004 [P] 创建加载状态组件 in src/components/common/LoadingState.vue
-- [ ] T005 [P] 创建错误状态组件 in src/components/common/ErrorState.vue
-- [ ] T006 [P] 创建空状态组件 in src/components/common/EmptyState.vue
-- [ ] T007 创建骨架屏基础组件（通用骨架元素：文本行、图片占位、卡片占位）in src/components/layout/SkeletonScreen.vue
+- [x] T001 [P] 创建防抖工具函数 in src/utils/debounce.js
+- [x] T002 [P] 创建请求队列管理器 in src/utils/requestQueue.js
+- [x] T003 [P] 创建图片懒加载工具 in src/utils/imageLoader.js
+- [x] T004 [P] 创建加载状态组件 in src/components/common/LoadingState.vue
+- [x] T005 [P] 创建错误状态组件 in src/components/common/ErrorState.vue
+- [x] T006 [P] 创建空状态组件 in src/components/common/EmptyState.vue
+- [x] T007 创建骨架屏基础组件（通用骨架元素：文本行、图片占位、卡片占位）in src/components/layout/SkeletonScreen.vue
 
 ---
 
@@ -40,15 +40,15 @@
 
 **⚠️ CRITICAL**: 必须在此阶段完成后才能开始用户故事实现
 
-- [ ] T008 创建缓存管理服务 in src/services/cache.js（实现时间戳验证、缓存有效性检查）
-- [ ] T009 创建Banner API服务 in src/services/banner.js
-- [ ] T010 创建Banner状态管理Store in src/stores/banner.js（含缓存机制）
-- [ ] T011 更新酒店API服务，添加推荐酒店和附近酒店方法 in src/services/hotel.js
-- [ ] T012 创建或更新酒店状态管理Store in src/stores/hotel.js（含缓存机制）
-- [ ] T013 更新商城API服务，添加分类、精选商品方法 in src/services/mall.js
-- [ ] T014 创建或更新商城状态管理Store in src/stores/mall.js（含缓存机制和分页状态）
-- [ ] T015 创建优惠券API服务 in src/services/coupon.js
-- [ ] T016 创建优惠券状态管理Store in src/stores/coupon.js
+- [x] T008 创建缓存管理服务 in src/services/cache.js（实现时间戳验证、缓存有效性检查）
+- [x] T009 创建Banner API服务 in src/services/banner.js
+- [x] T010 创建Banner状态管理Store in src/stores/banner.js（含缓存机制）
+- [x] T011 更新酒店API服务，添加推荐酒店和附近酒店方法 in src/services/hotel.js
+- [x] T012 创建或更新酒店状态管理Store in src/stores/hotel.js（含缓存机制）
+- [x] T013 更新商城API服务，添加分类、精选商品方法 in src/services/mall.js
+- [x] T014 创建或更新商城状态管理Store in src/stores/mall.js（含缓存机制和分页状态）
+- [x] T015 创建优惠券API服务 in src/services/coupon.js
+- [x] T016 创建优惠券状态管理Store in src/stores/coupon.js
 
 **Checkpoint**: 基础设施就绪 - 用户故事实现可以开始
 
@@ -62,16 +62,16 @@
 
 ### Implementation for User Story 1
 
-- [ ] T017 [US1] 首页集成Banner Store，替换mock数据实现轮播广告展示 in src/pages/index/index.vue
-- [ ] T018 [US1] 首页集成Hotel Store，实现推荐酒店区域数据展示 in src/pages/index/index.vue
-- [ ] T019 [US1] 首页集成热门房型API调用，添加getHotRooms方法 in src/services/hotel.js
-- [ ] T020 [US1] 首页实现热门房型区域数据展示 in src/pages/index/index.vue
-- [ ] T021 [US1] 首页实现附近酒店功能（位置权限请求+API调用）in src/pages/index/index.vue
-- [ ] T022 [US1] 首页集成精选商品API，实现精选商品区域数据展示 in src/pages/index/index.vue
-- [ ] T023 [US1] 首页集成优惠券Store，实现限时优惠区域展示 in src/pages/index/index.vue
-- [ ] T024 [US1] 首页添加下拉刷新功能，触发所有数据强制刷新 in src/pages/index/index.vue
-- [ ] T025 [US1] 首页添加加载状态（骨架屏）和错误状态组件展示 in src/pages/index/index.vue
-- [ ] T026 [US1] 首页实现位置权限被拒绝时的降级处理（显示热门酒店）in src/pages/index/index.vue
+- [x] T017 [US1] 首页集成Banner Store，替换mock数据实现轮播广告展示 in src/pages/index/index.vue
+- [x] T018 [US1] 首页集成Hotel Store，实现推荐酒店区域数据展示 in src/pages/index/index.vue
+- [x] T019 [US1] 首页集成热门房型API调用，添加getHotRooms方法 in src/services/hotel.js
+- [x] T020 [US1] 首页实现热门房型区域数据展示 in src/pages/index/index.vue
+- [x] T021 [US1] 首页实现附近酒店功能（位置权限请求+API调用）in src/pages/index/index.vue
+- [x] T022 [US1] 首页集成精选商品API，实现精选商品区域数据展示 in src/pages/index/index.vue
+- [x] T023 [US1] 首页集成优惠券Store，实现限时优惠区域展示 in src/pages/index/index.vue
+- [x] T024 [US1] 首页添加下拉刷新功能，触发所有数据强制刷新 in src/pages/index/index.vue
+- [x] T025 [US1] 首页添加加载状态（骨架屏）和错误状态组件展示 in src/pages/index/index.vue
+- [x] T026 [US1] 首页实现位置权限被拒绝时的降级处理（显示热门酒店）in src/pages/index/index.vue
 
 **Checkpoint**: 首页数据实时展示功能完整且可独立测试
 
@@ -85,15 +85,15 @@
 
 ### Implementation for User Story 2
 
-- [ ] T027 [US2] 商城页集成分类API，实现分类导航展示 in src/pages/mall/index.vue
-- [ ] T028 [US2] 商城页实现分类切换功能，切换时加载对应分类商品 in src/pages/mall/index.vue
-- [ ] T029 [US2] 商城页实现排序功能（新品/热销/价格升降序）in src/pages/mall/index.vue
-- [ ] T030 [US2] 商城页实现上拉加载更多（分页）功能 in src/pages/mall/index.vue
-- [ ] T031 [US2] 商城页实现搜索功能并集成防抖（400ms）in src/pages/mall/index.vue
-- [ ] T032 [US2] 商城页实现请求竞态处理（分类/筛选快速切换时取消旧请求）in src/pages/mall/index.vue
-- [ ] T033 [US2] 商城页添加加载状态、空状态和错误状态组件 in src/pages/mall/index.vue
-- [ ] T034 [US2] 商城页实现下拉刷新功能 in src/pages/mall/index.vue
-- [ ] T034a [US2] 商城页集成图片懒加载功能 in src/pages/mall/index.vue
+- [x] T027 [US2] 商城页集成分类API，实现分类导航展示 in src/pages/mall/index.vue
+- [x] T028 [US2] 商城页实现分类切换功能，切换时加载对应分类商品 in src/pages/mall/index.vue
+- [x] T029 [US2] 商城页实现排序功能（新品/热销/价格升降序）in src/pages/mall/index.vue
+- [x] T030 [US2] 商城页实现上拉加载更多（分页）功能 in src/pages/mall/index.vue
+- [x] T031 [US2] 商城页实现搜索功能并集成防抖（400ms）in src/pages/mall/index.vue
+- [x] T032 [US2] 商城页实现请求竞态处理（分类/筛选快速切换时取消旧请求）in src/pages/mall/index.vue
+- [x] T033 [US2] 商城页添加加载状态、空状态和错误状态组件 in src/pages/mall/index.vue
+- [x] T034 [US2] 商城页实现下拉刷新功能 in src/pages/mall/index.vue
+- [x] T034a [US2] 商城页集成图片懒加载功能 in src/pages/mall/index.vue
 
 **Checkpoint**: 商城商品动态加载功能完整且可独立测试
 
@@ -107,16 +107,16 @@
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] 酒店列表页集成Hotel Store，实现酒店列表数据展示 in src/pages/hotel/list.vue
-- [ ] T036 [US3] 酒店列表页实现位置筛选功能（附近酒店按距离排序）in src/pages/hotel/list.vue
-- [ ] T037 [US3] 酒店列表页实现搜索功能并集成防抖（400ms）in src/pages/hotel/list.vue
-- [ ] T038 [US3] 酒店列表页实现分类标签切换功能 in src/pages/hotel/list.vue
-- [ ] T038a [US3] 酒店列表页实现排序功能（距离/价格/评分）in src/pages/hotel/list.vue
-- [ ] T039 [US3] 酒店列表页实现上拉加载更多（分页）功能 in src/pages/hotel/list.vue
-- [ ] T040 [US3] 酒店列表页实现请求竞态处理（搜索/筛选快速切换时取消旧请求）in src/pages/hotel/list.vue
-- [ ] T041 [US3] 酒店列表页添加加载状态、空状态和错误状态组件 in src/pages/hotel/list.vue
-- [ ] T042 [US3] 酒店列表页实现下拉刷新功能 in src/pages/hotel/list.vue
-- [ ] T042a [US3] 酒店列表页集成图片懒加载功能 in src/pages/hotel/list.vue
+- [x] T035 [US3] 酒店列表页集成Hotel Store，实现酒店列表数据展示 in src/pages/hotel/list.vue
+- [x] T036 [US3] 酒店列表页实现位置筛选功能（附近酒店按距离排序）in src/pages/hotel/list.vue
+- [x] T037 [US3] 酒店列表页实现搜索功能并集成防抖（400ms）in src/pages/hotel/list.vue
+- [x] T038 [US3] 酒店列表页实现分类标签切换功能 in src/pages/hotel/list.vue
+- [x] T038a [US3] 酒店列表页实现排序功能（距离/价格/评分）in src/pages/hotel/list.vue
+- [x] T039 [US3] 酒店列表页实现上拉加载更多（分页）功能 in src/pages/hotel/list.vue
+- [x] T040 [US3] 酒店列表页实现请求竞态处理（搜索/筛选快速切换时取消旧请求）in src/pages/hotel/list.vue
+- [x] T041 [US3] 酒店列表页添加加载状态、空状态和错误状态组件 in src/pages/hotel/list.vue
+- [x] T042 [US3] 酒店列表页实现下拉刷新功能 in src/pages/hotel/list.vue
+- [x] T042a [US3] 酒店列表页集成图片懒加载功能 in src/pages/hotel/list.vue
 
 **Checkpoint**: 酒店列表真实数据功能完整且可独立测试
 
