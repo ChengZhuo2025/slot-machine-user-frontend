@@ -18,8 +18,23 @@
 
     <!-- 页面内容 -->
     <scroll-view class="page-content" scroll-y="true" @scroll="onScroll" :show-scrollbar="false">
+      <!-- T502: 加载状态 -->
+      <view v-if="loading" class="loading-container">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">加载中...</text>
+      </view>
+
+      <!-- T503: 错误状态 -->
+      <view v-else-if="loadError" class="error-container">
+        <Icon name="alert-circle" size="xlarge" color="#EF4444" />
+        <text class="error-text">加载失败</text>
+        <view class="retry-btn" @click="retryFetchProfile">
+          <text class="retry-text">点击重试</text>
+        </view>
+      </view>
+
       <!-- 顶部氛围与资产总览 -->
-      <view class="hero-section animate__animated animate__fadeInDown">
+      <view v-else class="hero-section animate__animated animate__fadeInDown">
         <view class="hero-glass"></view>
         <view class="hero-card">
           <view class="hero-main">
@@ -297,8 +312,11 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import * as userApi from '@/services/user'
 import CustomTabBar from '@/components/layout/CustomTabBar.vue'
+import { requireAuth } from '@/utils/authGuard'
 import Icon from '@/components/common/Icon.vue'
 import Modal from '@/components/common/Modal.vue'
 import EditProfile from '@/components/user/EditProfile.vue'
@@ -376,21 +394,29 @@ export default {
       membership: false
     })
 
-    // 用户基本信息
+    // T502: 加载状态
+    const loading = ref(false)
+    // T503: 错误状态
+    const loadError = ref(false)
+
+    // T500-T501: 用户基本信息（从 API 获取）
     const userInfo = reactive({
-      nickname: '大包子',
+      nickname: '',
       avatar: '',
-      phone: '18600165902',
-      isVerified: true
+      phone: '',
+      isVerified: false,
+      points: 0,
+      member_level: null
     })
 
     const memberInfo = reactive({
-      isVip: true,
-      expiresAt: '2025.12.31'
+      isVip: false,
+      expiresAt: ''
     })
 
-    const accountBalance = ref('1,258.50')
-    const pointsBalance = ref('8,520')
+    // 账户余额和积分（从 store 或 API 获取）
+    const accountBalance = ref('0.00')
+    const pointsBalance = ref('0')
     const unreadMessageCount = ref(5)
 
     const couponStatus = reactive({
@@ -410,7 +436,8 @@ export default {
       { label: '通知设置', icon: 'notification', color: '#F59E0B', action: 'notifications', desc: '控制推送提醒', bg: 'rgba(245, 158, 11, 0.1)' },
       { label: '账户安全', icon: 'safe', color: '#d746f0', action: 'security', desc: '动态验证更安全', bg: 'rgba(215, 70, 240, 0.1)' },
       { label: '隐私设置', icon: 'eye', color: '#8B5CF6', action: 'privacy', desc: '管理信息权限', bg: 'rgba(139, 92, 246, 0.1)' },
-      { label: '清除缓存', icon: 'delete', color: '#EF4444', action: 'clear_cache', desc: '释放存储空间', bg: 'rgba(239, 68, 68, 0.1)' }
+      { label: '清除缓存', icon: 'delete', color: '#EF4444', action: 'clear_cache', desc: '释放存储空间', bg: 'rgba(239, 68, 68, 0.1)' },
+      { label: '退出登录', icon: 'log-out', color: '#9CA3AF', action: 'logout', desc: '退出当前账号', bg: 'rgba(156, 163, 175, 0.1)' }
     ])
 
     const settingsList = ref([
@@ -442,11 +469,12 @@ export default {
       })
     }
 
-    // 处理资料保存
+    // T513: 处理资料保存 - 成功后刷新数据
     const handleProfileSave = (data) => {
       Object.assign(userInfo, data)
       modals.editProfile = false
-      uni.showToast({ title: '资料已更新', icon: 'success' })
+      // 刷新用户信息以确保数据同步
+      fetchUserProfile()
     }
 
     // 处理头像修改
@@ -517,6 +545,10 @@ export default {
             }
           })
           break
+        case 'logout':
+          // T410-T413: 登出实现
+          handleLogout()
+          break
         default:
           uni.showToast({ title: `${label}功能开发中`, icon: 'none' })
       }
@@ -573,6 +605,82 @@ export default {
       uni.showToast({ title: '包月卡开通成功', icon: 'success' })
     }
 
+    // T410-T413: 登出处理
+    const handleLogout = () => {
+      uni.showModal({
+        title: '退出登录',
+        content: '确定要退出当前账号吗？',
+        success: async (res) => {
+          if (res.confirm) {
+            try {
+              // T410: 调用 store 的 logout 方法（内部会调用 authApi.logout()）
+              // T411-T412: store.logout() 会清除所有 token 相关状态和本地存储
+              await userStore.logout()
+
+              uni.showToast({ title: '已退出登录', icon: 'success' })
+
+              // T413: 跳转到登录页
+              setTimeout(() => {
+                uni.reLaunch({ url: '/pages/user/login' })
+              }, 500)
+            } catch (error) {
+              console.error('登出失败:', error)
+              // 即使 API 调用失败，也清理本地状态并跳转
+              uni.reLaunch({ url: '/pages/user/login' })
+            }
+          }
+        }
+      })
+    }
+
+    // T500: 获取用户信息
+    const fetchUserProfile = async () => {
+      loading.value = true
+      loadError.value = false
+
+      try {
+        const profile = await userApi.getProfile()
+
+        // 更新用户信息
+        userInfo.nickname = profile.nickname || ''
+        userInfo.avatar = profile.avatar || ''
+        userInfo.phone = profile.phone || ''
+        userInfo.isVerified = profile.is_verified || false
+        userInfo.points = profile.points || 0
+
+        // 更新会员信息
+        if (profile.member_level) {
+          memberInfo.isVip = true
+          memberInfo.expiresAt = profile.member_level.expires_at || ''
+        }
+
+        // 更新积分显示
+        pointsBalance.value = (profile.points || 0).toLocaleString('zh-CN')
+
+        // 同步到 store
+        userStore.updateUserInfo(profile)
+      } catch (error) {
+        console.error('获取用户信息失败:', error)
+        loadError.value = true
+      } finally {
+        loading.value = false
+      }
+    }
+
+    // T503: 重试获取用户信息
+    const retryFetchProfile = () => {
+      fetchUserProfile()
+    }
+
+    // T300: 添加登录守卫
+    onShow(() => {
+      requireAuth()
+      // 每次显示页面时刷新用户信息
+      if (userStore.isLogin) {
+        fetchUserProfile()
+      }
+    })
+
     onMounted(() => {
       console.log('个人中心页面加载完成')
     })
@@ -591,6 +699,8 @@ export default {
       toolsList,
       settingsList,
       maskedPhone,
+      loading,
+      loadError,
       openModal,
       changeAvatar,
       handleProfileSave,
@@ -604,7 +714,9 @@ export default {
       onScroll,
       updateScrollState,
       receiveCoupon,
-      buyMonthlyCard
+      buyMonthlyCard,
+      handleLogout,
+      retryFetchProfile
     }
   }
 }
@@ -634,6 +746,71 @@ export default {
   background-attachment: fixed;
   background-position: center center;
   background-repeat: no-repeat;
+}
+
+// T502: 加载状态样式
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
+  gap: 24rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid rgba(99, 102, 241, 0.2);
+  border-top-color: $primary-color;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: $text-secondary;
+}
+
+// T503: 错误状态样式
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
+  gap: 20rpx;
+}
+
+.error-text {
+  font-size: 28rpx;
+  color: $text-secondary;
+  margin-top: 8rpx;
+}
+
+.retry-btn {
+  margin-top: 16rpx;
+  padding: 16rpx 48rpx;
+  background: $primary-color;
+  border-radius: 40rpx;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+.retry-text {
+  font-size: 26rpx;
+  color: #fff;
+  font-weight: $font-weight-medium;
 }
 
 // 标题栏

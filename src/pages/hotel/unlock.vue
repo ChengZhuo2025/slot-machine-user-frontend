@@ -119,9 +119,10 @@
 
 <script>
 import { ref, computed, nextTick } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import Icon from '@/components/common/Icon.vue'
 import UnlockProgress from '@/components/hotel/UnlockProgress.vue'
+import { requireAuth } from '@/utils/authGuard'
 import request from '@/utils/request'
 
 export default {
@@ -379,6 +380,11 @@ export default {
     const handleBack = () => {
       uni.navigateBack()
     }
+
+    // T308: 添加登录守卫
+    onShow(() => {
+      requireAuth()
+    })
 
     // 页面加载
     onLoad((options) => {

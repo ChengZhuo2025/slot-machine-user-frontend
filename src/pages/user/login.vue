@@ -51,7 +51,7 @@
           />
           <view
             class="code-btn"
-            :class="{ disabled: countdown > 0 || !isPhoneValid }"
+            :class="{ disabled: countdown > 0 || !isPhoneValid || sendingCode }"
             @click="sendCode"
           >
             <text class="code-btn-text">
@@ -90,6 +90,7 @@
     </view>
 
     <!-- 第三方登录 -->
+    <!-- #ifdef MP-WEIXIN -->
     <view class="third-party">
       <view class="divider">
         <view class="divider-line"></view>
@@ -103,6 +104,7 @@
         </view>
       </view>
     </view>
+    <!-- #endif -->
 
     <!-- 底部提示 -->
     <view class="footer-tip">
@@ -112,10 +114,21 @@
 </template>
 
 <script>
+/**
+ * 登录页面
+ * T100-T106: 短信验证码登录
+ * T200-T205: 微信小程序登录
+ * T320-T322: 登录成功跳转
+ */
 import { ref, reactive, computed, onUnmounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import Icon from '@/components/common/Icon.vue'
-import * as userApi from '@/services/user'
+// T100: 导入 auth 服务替换 user 服务
+import * as authApi from '@/services/auth'
+// T320: 导入登录守卫工具
+import { getRedirectPath, clearRedirectPath } from '@/utils/authGuard'
+// CHK002: 导入验证码限制工具
+import * as codeLimit from '@/utils/codeLimit'
 
 export default {
   name: 'UserLoginPage',
@@ -133,6 +146,7 @@ export default {
 
     // 状态
     const loading = ref(false)
+    const sendingCode = ref(false)
     const countdown = ref(0)
     const focusedField = ref('')
     let timer = null
@@ -150,14 +164,17 @@ export default {
         !loading.value
     })
 
-    // 发送验证码
+    // T100, T101: 发送验证码
     const sendCode = async () => {
-      if (countdown.value > 0 || !isPhoneValid.value) return
+      if (countdown.value > 0 || !isPhoneValid.value || sendingCode.value) return
+
+      sendingCode.value = true
 
       try {
-        await userApi.sendSmsCode(form.phone)
+        // T100: 使用 authApi.sendSmsCode 替换 mock 调用
+        await authApi.sendSmsCode(form.phone)
 
-        // 开始倒计时
+        // T101: 开始 60 秒倒计时
         countdown.value = 60
         timer = setInterval(() => {
           countdown.value--
@@ -172,14 +189,24 @@ export default {
           icon: 'success'
         })
       } catch (error) {
-        uni.showToast({
-          title: error.message || '发送失败',
-          icon: 'none'
-        })
+        // T106: 处理频率限制错误
+        if (error.message.includes('频繁')) {
+          uni.showToast({
+            title: '发送过于频繁，请稍后再试',
+            icon: 'none'
+          })
+        } else {
+          uni.showToast({
+            title: error.message || '发送失败',
+            icon: 'none'
+          })
+        }
+      } finally {
+        sendingCode.value = false
       }
     }
 
-    // 手机号验证码登录
+    // T102-T106, CHK002: 手机号验证码登录（含错误次数限制）
     const handleLogin = async () => {
       if (!canLogin.value) {
         if (!form.agreed) {
@@ -191,35 +218,70 @@ export default {
         return
       }
 
+      // CHK002: 检查是否被锁定
+      const lockStatus = codeLimit.checkLocked(form.phone)
+      if (lockStatus.locked) {
+        uni.showToast({
+          title: `账号已锁定，请${codeLimit.formatLockTime(lockStatus.remainingTime)}后重试`,
+          icon: 'none',
+          duration: 3000
+        })
+        return
+      }
+
       loading.value = true
 
       try {
-        await userStore.login({
+        // T102, T103: 调用 smsLogin 并保存响应到 store
+        const response = await userStore.login({
           phone: form.phone,
           code: form.code,
           loginType: 'sms'
         })
 
-        uni.showToast({
-          title: '登录成功',
-          icon: 'success'
-        })
+        // CHK002: 登录成功，清除错误记录
+        codeLimit.clearErrors(form.phone)
+
+        // T104: 处理 is_new_user 标志
+        if (response.is_new_user) {
+          uni.showToast({
+            title: '欢迎新用户',
+            icon: 'success'
+          })
+        } else {
+          uni.showToast({
+            title: '登录成功',
+            icon: 'success'
+          })
+        }
 
         // 延迟跳转
         setTimeout(() => {
           handleLoginSuccess()
         }, 1000)
       } catch (error) {
+        // CHK002: 记录验证码错误
+        const errorResult = codeLimit.recordError(form.phone)
+
+        // T105: 显示错误信息
+        let errorMsg = error.message || '登录失败'
+        if (errorResult.locked) {
+          errorMsg = `错误次数过多，账号已锁定15分钟`
+        } else if (errorResult.remainingAttempts <= 2) {
+          errorMsg = `${errorMsg}，还剩${errorResult.remainingAttempts}次机会`
+        }
+
         uni.showToast({
-          title: error.message || '登录失败',
-          icon: 'none'
+          title: errorMsg,
+          icon: 'none',
+          duration: 3000
         })
       } finally {
         loading.value = false
       }
     }
 
-    // 微信登录
+    // T200-T205: 微信登录
     const handleWechatLogin = async () => {
       if (!form.agreed) {
         uni.showToast({
@@ -230,8 +292,9 @@ export default {
       }
 
       // #ifdef MP-WEIXIN
-      // 小程序环境
+      // T200, T201: 小程序环境检测，仅在小程序中显示微信登录按钮
       try {
+        // T202: 调用 uni.login() 获取 code
         const loginResult = await new Promise((resolve, reject) => {
           uni.login({
             provider: 'weixin',
@@ -241,55 +304,102 @@ export default {
         })
 
         loading.value = true
-        await userStore.login({
+
+        // T203: 使用 code 调用 wechatLogin
+        const response = await userStore.login({
           code: loginResult.code,
           loginType: 'wechat'
         })
 
-        handleLoginSuccess()
-      } catch (error) {
-        uni.showToast({
-          title: error.message || '微信登录失败',
-          icon: 'none'
-        })
-      } finally {
-        loading.value = false
-      }
-      // #endif
-
-      // #ifdef H5
-      // H5环境 - 模拟微信登录
-      loading.value = true
-      try {
-        await userStore.login({
-          loginType: 'wechat_h5'
-        })
-
-        uni.showToast({
-          title: '登录成功',
-          icon: 'success'
-        })
+        // T205: 解析响应
+        if (response.is_new_user) {
+          uni.showToast({
+            title: '欢迎新用户',
+            icon: 'success'
+          })
+        } else {
+          uni.showToast({
+            title: '登录成功',
+            icon: 'success'
+          })
+        }
 
         setTimeout(() => {
           handleLoginSuccess()
         }, 1000)
       } catch (error) {
+        // CHK003: 微信登录降级方案 - 详细错误处理
+        let errorMsg = '微信登录失败'
+        let showFallback = false
+
+        if (error.errMsg) {
+          if (error.errMsg.includes('deny') || error.errMsg.includes('auth deny')) {
+            // T204: 用户拒绝授权
+            errorMsg = '需要微信授权才能登录'
+          } else if (error.errMsg.includes('cancel')) {
+            // 用户取消
+            errorMsg = '已取消微信登录'
+          } else if (error.errMsg.includes('timeout')) {
+            // 超时
+            errorMsg = '微信登录超时，请重试'
+          } else if (error.errMsg.includes('fail')) {
+            // 系统拦截或其他失败
+            errorMsg = '微信登录暂不可用'
+            showFallback = true
+          }
+        } else if (error.message) {
+          errorMsg = error.message
+        }
+
         uni.showToast({
-          title: error.message || '微信登录失败',
-          icon: 'none'
+          title: errorMsg,
+          icon: 'none',
+          duration: 2500
         })
+
+        // CHK003: 降级提示 - 引导用户使用手机号登录
+        if (showFallback) {
+          setTimeout(() => {
+            uni.showModal({
+              title: '提示',
+              content: '微信登录暂时不可用，请使用手机号验证码登录',
+              showCancel: false,
+              confirmText: '知道了'
+            })
+          }, 500)
+        }
       } finally {
         loading.value = false
       }
       // #endif
     }
 
-    // 登录成功处理
+    // T320-T322: 登录成功跳转处理
     const handleLoginSuccess = () => {
-      const pages = getCurrentPages()
-      if (pages.length > 1) {
-        uni.navigateBack()
+      // T320: 获取保存的目标页面
+      const redirectPath = getRedirectPath()
+      // T322: 清除保存的路径
+      clearRedirectPath()
+
+      // T321: 跳转到目标页面或首页
+      if (redirectPath && redirectPath !== '/pages/user/login') {
+        // 检查是否是 TabBar 页面
+        const tabBarPages = [
+          '/pages/index/index',
+          '/pages/mall/index',
+          '/pages/distribution/index',
+          '/pages/user/index'
+        ]
+
+        const basePath = redirectPath.split('?')[0]
+
+        if (tabBarPages.includes(basePath)) {
+          uni.switchTab({ url: basePath })
+        } else {
+          uni.redirectTo({ url: redirectPath })
+        }
       } else {
+        // 默认跳转到首页
         uni.switchTab({ url: '/pages/index/index' })
       }
     }
@@ -326,6 +436,7 @@ export default {
     return {
       form,
       loading,
+      sendingCode,
       countdown,
       focusedField,
       isPhoneValid,

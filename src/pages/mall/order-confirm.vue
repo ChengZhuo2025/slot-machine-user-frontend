@@ -161,6 +161,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useRouter, useRoute } from 'vue-router'
 import Icon from '@/components/common/Icon.vue'
 import PriceDetail from '@/components/hotel/PriceDetail.vue'
@@ -168,6 +169,7 @@ import PaymentMethod from '@/components/hotel/PaymentMethod.vue'
 import AddressManager from '@/components/user/AddressManager.vue'
 import CouponSelector from '@/components/mall/CouponSelector.vue'
 import { useCartStore } from '@/stores/cart'
+import { requireAuth } from '@/utils/authGuard'
 import request from '@/utils/request'
 
 export default {
@@ -445,6 +447,11 @@ export default {
         uni.showToast({ title: '提交失败，请重试', icon: 'none' })
       }
     }
+
+    // T303: 添加登录守卫
+    onShow(() => {
+      requireAuth()
+    })
 
     onMounted(() => {
       initOrderData()

@@ -4,7 +4,7 @@ import { get, post, put, del } from './request'
 
 // 获取商品分类
 export const getProductCategories = () => {
-  return get('/products/categories')
+  return get('/categories')
 }
 
 // 获取商品列表
@@ -34,7 +34,7 @@ export const searchProducts = (keyword, params = {}) => {
 
 // 添加到购物车
 export const addToCart = (data) => {
-  return post('/cart/add', data)
+  return post('/cart', data)
 }
 
 // 获取购物车
@@ -83,13 +83,13 @@ export const confirmOrder = (id) => {
 }
 
 // 申请退款
-export const applyRefund = (id, data) => {
-  return post(`/orders/${id}/refund`, data)
+export const applyRefund = (orderId, data) => {
+  return post('/refunds', { order_id: orderId, ...data })
 }
 
 // 商品评价
 export const reviewProduct = (orderId, data) => {
-  return post(`/orders/${orderId}/review`, data)
+  return post('/reviews', { order_id: orderId, ...data })
 }
 
 // 获取商品评价

@@ -198,9 +198,11 @@
 
 <script>
 import { ref, computed, onMounted } from "vue";
+import { onShow } from "@dcloudio/uni-app";
 import { useRouter } from "vue-router";
 import Icon from "@/components/common/Icon.vue";
 import { useCartStore } from "@/stores/cart";
+import { requireAuth } from "@/utils/authGuard";
 import request from "@/utils/request";
 
 export default {
@@ -347,6 +349,11 @@ export default {
       // 跳转到订单确认页
       uni.navigateTo({ url: "/pages/mall/order-confirm" });
     };
+
+    // T302: 添加登录守卫
+    onShow(() => {
+      requireAuth();
+    });
 
     onMounted(() => {
       fetchRecommendProducts();
