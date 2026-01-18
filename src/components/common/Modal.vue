@@ -107,15 +107,6 @@ export default {
     const visible = ref(false)
     const animating = ref(false)
 
-    // 监听 modelValue 变化
-    watch(() => props.modelValue, (newVal) => {
-      if (newVal) {
-        openModal()
-      } else {
-        closeModal()
-      }
-    }, { immediate: true })
-
     // 打开弹窗
     const openModal = () => {
       visible.value = true
@@ -135,6 +126,15 @@ export default {
         emit('closed')
       }, 300)
     }
+
+    // 监听 modelValue 变化（在函数定义之后）
+    watch(() => props.modelValue, (newVal) => {
+      if (newVal) {
+        openModal()
+      } else {
+        closeModal()
+      }
+    }, { immediate: true })
 
     // 处理遮罩点击
     const handleOverlayClick = () => {

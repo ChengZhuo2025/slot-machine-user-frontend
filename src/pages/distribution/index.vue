@@ -999,7 +999,7 @@ export default {
 .page {
   min-height: 100vh;
   background-color: $background-secondary;
-  padding-bottom:30rpx;
+  padding-bottom: 120rpx;
   display: flex;
   flex-direction: column;
 }

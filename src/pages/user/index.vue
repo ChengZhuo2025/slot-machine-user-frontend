@@ -219,6 +219,13 @@
         </view>
       </view>
 
+      <!-- 退出登录按钮 -->
+      <view class="logout-section animate__animated animate__fadeInUp">
+        <view class="logout-btn" @click="handleLogout">
+          <text class="logout-text">退出登录</text>
+        </view>
+      </view>
+
       <!-- 公司版权信息 -->
       <view class="footer-section animate__animated animate__fadeInUp">
         <view class="company-info">
@@ -436,8 +443,7 @@ export default {
       { label: '通知设置', icon: 'notification', color: '#F59E0B', action: 'notifications', desc: '控制推送提醒', bg: 'rgba(245, 158, 11, 0.1)' },
       { label: '账户安全', icon: 'safe', color: '#d746f0', action: 'security', desc: '动态验证更安全', bg: 'rgba(215, 70, 240, 0.1)' },
       { label: '隐私设置', icon: 'eye', color: '#8B5CF6', action: 'privacy', desc: '管理信息权限', bg: 'rgba(139, 92, 246, 0.1)' },
-      { label: '清除缓存', icon: 'delete', color: '#EF4444', action: 'clear_cache', desc: '释放存储空间', bg: 'rgba(239, 68, 68, 0.1)' },
-      { label: '退出登录', icon: 'log-out', color: '#9CA3AF', action: 'logout', desc: '退出当前账号', bg: 'rgba(156, 163, 175, 0.1)' }
+      { label: '清除缓存', icon: 'delete', color: '#EF4444', action: 'clear_cache', desc: '释放存储空间', bg: 'rgba(239, 68, 68, 0.1)' }
     ])
 
     const settingsList = ref([
@@ -544,10 +550,6 @@ export default {
               }
             }
           })
-          break
-        case 'logout':
-          // T410-T413: 登出实现
-          handleLogout()
           break
         default:
           uni.showToast({ title: `${label}功能开发中`, icon: 'none' })
@@ -729,7 +731,7 @@ export default {
 .page {
   min-height: 100vh;
   background-color: $background-secondary;
-  padding-bottom: 30rpx;
+  padding-bottom: 120rpx;
   display: flex;
   flex-direction: column;
 }
@@ -1425,7 +1427,7 @@ export default {
 
 // 设置中心区域
 .settings-section {
-  margin: 0 $spacing-lg $spacing-xl;
+  margin: 0 $spacing-lg $spacing-lg;
 
   .settings-list {
     background: $background-primary;
@@ -1477,6 +1479,31 @@ export default {
       .setting-action {
         @include flex-center();
       }
+    }
+  }
+}
+
+// 退出登录按钮区域
+.logout-section {
+  margin: 0 $spacing-lg $spacing-xl;
+
+  .logout-btn {
+    @include flex-center();
+    padding: $spacing-base 0;
+    background: $background-primary;
+    border-radius: $border-radius-xl;
+    border: 2rpx solid rgba(239, 68, 68, 0.2);
+    transition: all $transition-base;
+
+    &:active {
+      background: rgba(239, 68, 68, 0.05);
+      transform: scale(0.98);
+    }
+
+    .logout-text {
+      font-size: $font-size-base;
+      font-weight: $font-weight-medium;
+      color: $error-color;
     }
   }
 }

@@ -74,77 +74,9 @@
       </view>
     </view>
 
-    <!-- 商品分类导航 -->
-    <view class="category-section animate__animated animate__fadeInRight">
-      <!-- 骨架屏 -->
-      <view v-if="mallStore.loading.categories && !mallStore.hasCategories" class="category-skeleton">
-        <SkeletonScreen v-for="i in 5" :key="i" type="avatar" :width="80" :height="80" />
-      </view>
-      <!-- 分类列表 -->
-      <scroll-view
-        v-else
-        class="category-scroll"
-        scroll-x="true"
-        :show-scrollbar="false"
-      >
-        <view class="category-list">
-          <!-- 全部分类 -->
-          <view
-            class="category-item"
-            :class="{ active: selectedCategoryId === null }"
-            @click="selectCategory(null)"
-          >
-            <Icon name="grid" size="medium" :color="selectedCategoryId === null ? '#d746f0' : '#666'" />
-            <text class="category-name">全部</text>
-          </view>
-          <!-- API分类 -->
-          <view
-            v-for="category in mallStore.topCategories"
-            :key="category.id"
-            class="category-item"
-            :class="{ active: selectedCategoryId === category.id }"
-            @click="selectCategory(category.id)"
-          >
-            <Icon :name="getCategoryIcon(category)" size="medium" :color="selectedCategoryId === category.id ? '#d746f0' : '#666'" />
-            <text class="category-name">{{ category.name }}</text>
-          </view>
-        </view>
-      </scroll-view>
-    </view>
-
-    <!-- Banner轮播图 -->
-    <view class="banner-section animate__animated animate__bounceIn">
-      <!-- 骨架屏 -->
-      <SkeletonScreen v-if="bannerStore.loading.mall && !bannerStore.hasMallBanners" type="banner" />
-      <!-- Banner内容 -->
-      <swiper
-        v-else-if="bannerStore.hasMallBanners"
-        class="banner-swiper"
-        indicator-dots
-        autoplay
-        interval="3000"
-        duration="500"
-        indicator-color="rgba(255,255,255,0.5)"
-        indicator-active-color="#d746f0"
-      >
-        <swiper-item v-for="banner in bannerStore.mallBanners" :key="banner.id">
-          <image
-            class="banner-image"
-            :src="banner.image"
-            mode="aspectFill"
-            @click="onBannerClick(banner)"
-          />
-        </swiper-item>
-      </swiper>
-      <!-- 默认占位 -->
-      <view v-else class="banner-placeholder">
-        <text class="placeholder-text">暂无Banner</text>
-      </view>
-    </view>
-
-    <!-- 商品列表 -->
+    <!-- 页面主内容 -->
     <scroll-view
-      class="product-list-scroll"
+      class="page-content"
       scroll-y="true"
       :show-scrollbar="false"
       refresher-enabled
@@ -154,6 +86,75 @@
       @scroll="onScroll"
       :lower-threshold="100"
     >
+      <!-- 商品分类导航 -->
+      <view class="category-section animate__animated animate__fadeInRight">
+        <!-- 骨架屏 -->
+        <view v-if="mallStore.loading.categories && !mallStore.hasCategories" class="category-skeleton">
+          <SkeletonScreen v-for="i in 5" :key="i" type="avatar" width="80rpx" height="80rpx" />
+        </view>
+        <!-- 分类列表 -->
+        <scroll-view
+          v-else-if="isMounted"
+          class="category-scroll"
+          scroll-x="true"
+          :show-scrollbar="false"
+        >
+          <view class="category-list">
+            <!-- 全部分类 -->
+            <view
+              class="category-item"
+              :class="{ active: selectedCategoryId === null }"
+              @click="selectCategory(null)"
+            >
+              <Icon name="grid" size="medium" :color="selectedCategoryId === null ? '#d746f0' : '#666'" />
+              <text class="category-name">全部</text>
+            </view>
+            <!-- API分类 -->
+            <view
+              v-for="category in mallStore.topCategories"
+              :key="category.id"
+              class="category-item"
+              :class="{ active: selectedCategoryId === category.id }"
+              @click="selectCategory(category.id)"
+            >
+              <Icon :name="getCategoryIcon(category)" size="medium" :color="selectedCategoryId === category.id ? '#d746f0' : '#666'" />
+              <text class="category-name">{{ category.name }}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- Banner轮播图 -->
+      <view class="banner-section animate__animated animate__bounceIn">
+        <!-- 骨架屏 -->
+        <SkeletonScreen v-if="bannerStore.loading.mall && !bannerStore.hasMallBanners" type="banner" />
+        <!-- Banner内容 -->
+        <swiper
+          v-else-if="bannerStore.hasMallBanners"
+          class="banner-swiper"
+          indicator-dots
+          autoplay
+          interval="3000"
+          duration="500"
+          indicator-color="rgba(255,255,255,0.5)"
+          indicator-active-color="#d746f0"
+        >
+          <swiper-item v-for="banner in bannerStore.mallBanners" :key="banner.id">
+            <image
+              class="banner-image"
+              :src="banner.image"
+              mode="aspectFill"
+              @click="onBannerClick(banner)"
+            />
+          </swiper-item>
+        </swiper>
+        <!-- 默认占位 -->
+        <view v-else class="banner-placeholder">
+          <text class="placeholder-text">暂无Banner</text>
+        </view>
+      </view>
+
+      <!-- 商品列表 -->
       <view class="product-section">
         <view class="section-header animate__animated animate__fadeInUp">
           <text class="section-title">{{ currentCategoryName }}</text>
@@ -343,7 +344,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import Icon from '@/components/common/Icon.vue'
 import CustomTabBar from '@/components/layout/CustomTabBar.vue'
 import SpecSelector from '@/components/mall/SpecSelector.vue'
@@ -366,6 +367,12 @@ export default {
     EmptyState,
     ErrorState
   },
+  // 页面滚动配置
+  onPageScroll(e) {
+    if (this.updateScrollState) {
+      this.updateScrollState(e.scrollTop);
+    }
+  },
   setup() {
     const cartStore = useCartStore()
     const mallStore = useMallStore()
@@ -378,6 +385,7 @@ export default {
     const isScrolled = ref(false)
     const showSearchPanel = ref(false)
     const isSearchFocused = ref(false)
+    const isMounted = ref(false) // 用于延迟渲染 scroll-view，避免框架 bug
 
     // 搜索相关
     const searchKeyword = ref('')
@@ -715,7 +723,20 @@ export default {
     }
 
     const onScroll = (e) => {
-      const { scrollTop } = e.detail
+      // 兼容不同平台的事件结构
+      let scrollTop = 0
+      if (e && e.detail && typeof e.detail.scrollTop === 'number') {
+        scrollTop = e.detail.scrollTop
+      } else if (e && e.target && typeof e.target.scrollTop === 'number') {
+        scrollTop = e.target.scrollTop
+      } else if (e && typeof e.scrollTop === 'number') {
+        scrollTop = e.scrollTop
+      }
+      isScrolled.value = scrollTop > 50
+    }
+
+    // 页面滚动状态更新（供 onPageScroll 调用）
+    const updateScrollState = (scrollTop) => {
       isScrolled.value = scrollTop > 50
     }
 
@@ -739,6 +760,11 @@ export default {
       if (history && Array.isArray(history)) {
         searchHistory.value = history
       }
+
+      // 延迟设置 isMounted，确保 DOM 完全准备好
+      nextTick(() => {
+        isMounted.value = true
+      })
 
       // 加载页面数据
       loadPageData()
@@ -775,6 +801,7 @@ export default {
       displayedProducts,
       hasMore,
       currentCategoryName,
+      isMounted,
 
       // 方法
       getCategoryIcon,
@@ -800,6 +827,7 @@ export default {
       buyNow,
       goToCart,
       onScroll,
+      updateScrollState,
       handleSpecSelectorClose,
       handleSpecAddToCart,
       handleSpecBuyNow
@@ -815,7 +843,7 @@ export default {
 .page {
   min-height: 100vh;
   background-color: $background-secondary;
-  padding-bottom: 20rpx;
+  padding-bottom: 120rpx;
   display: flex;
   flex-direction: column;
 }
@@ -1002,7 +1030,6 @@ export default {
   position: relative;
   z-index: 10;
   padding-right: $spacing-lg;
-  margin-top: 70rpx;
 
   .category-skeleton {
     @include flex();
@@ -1046,7 +1073,7 @@ export default {
 .banner-section {
   position: relative;
   z-index: 10;
-  margin: $spacing-base $spacing-lg;
+  margin: 0 $spacing-lg;
 
   .banner-swiper {
     height: 320rpx;
@@ -1072,16 +1099,18 @@ export default {
   }
 }
 
-// 商品列表
-.product-list-scroll {
+// 页面主内容区域
+.page-content {
   flex: 1;
+  padding: 100rpx 0 $spacing-xs;
 
   .product-section {
     padding: $spacing-lg;
 
     .section-header {
-      @include flex-between();
-      align-items: center;
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-xs;
       margin-bottom: $spacing-lg;
 
       .section-title {
@@ -1091,7 +1120,7 @@ export default {
       }
 
       .header-right-actions {
-        @include flex();
+        @include flex-between();
         align-items: center;
         gap: $spacing-lg;
 

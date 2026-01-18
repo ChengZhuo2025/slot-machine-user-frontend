@@ -189,7 +189,7 @@ export default {
     size: {
       type: String,
       default: 'medium',
-      validator: (value) => ['small', 'medium', 'large', 'xlarge'].includes(value)
+      validator: (value) => ['xsmall', 'small', 'medium', 'large', 'xlarge'].includes(value)
     },
     color: {
       type: String,
@@ -246,7 +246,12 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  
+
+  &--xsmall {
+    width: 26rpx;
+    height: 26rpx;
+  }
+
   &--small {
     width: 32rpx;
     height: 32rpx;

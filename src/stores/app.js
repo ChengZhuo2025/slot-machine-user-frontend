@@ -45,8 +45,12 @@ export const useAppStore = defineStore(
     // 获取位置信息
     const getCurrentLocation = () => {
       return new Promise((resolve, reject) => {
+        // H5 端使用 wgs84 坐标系（不需要地图服务商配置）
+        // 小程序端使用 gcj02 坐标系
+        const locationType = typeof window !== 'undefined' ? 'wgs84' : 'gcj02'
+
         uni.getLocation({
-          type: 'gcj02',
+          type: locationType,
           success: (res) => {
             const location = {
               latitude: res.latitude,
@@ -57,7 +61,14 @@ export const useAppStore = defineStore(
             resolve(location)
           },
           fail: (error) => {
-            console.error('获取位置失败:', error)
+            console.warn('获取位置失败:', error)
+            // 位置获取失败时使用默认位置（北京）
+            const defaultLocation = {
+              latitude: 39.9042,
+              longitude: 116.4074,
+              accuracy: 0
+            }
+            currentLocation.value = defaultLocation
             reject(error)
           }
         })

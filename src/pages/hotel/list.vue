@@ -561,8 +561,11 @@ export default {
     // 获取用户位置
     const getUserLocation = () => {
       return new Promise((resolve, reject) => {
+        // H5 端使用 wgs84 坐标系（不需要地图服务商配置）
+        const locationType = typeof window !== 'undefined' ? 'wgs84' : 'gcj02'
+
         uni.getLocation({
-          type: 'gcj02',
+          type: locationType,
           success: (res) => {
             userLocation.value = {
               longitude: res.longitude,
